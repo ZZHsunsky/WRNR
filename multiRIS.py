@@ -31,10 +31,9 @@ def multiMargain(G, p, name, param, result_dict, result_lock):
         result_dict[name] = Q
     return
 
-def main(G, k=50, dataset="Random", p=0.1, mc=50000):
+def main(G, k=50, dataset="Random", p=0.1, mc=50000, num_cores=8):
 
     # 读取CPU核心数量，加入进程池
-    num_cores = int(mp.cpu_count())
     pool = mp.Pool(num_cores)
 
     step = mc // num_cores

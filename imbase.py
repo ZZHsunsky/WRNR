@@ -3,7 +3,6 @@ from random import uniform, seed
 import numpy as np
 import pandas as pd
 import time
-from igraph import *
 import random
 from collections import Counter
 import networkx as nx
@@ -254,10 +253,10 @@ def LoadDataset(name="NetHEPT", drop_dup=True):
     return df
 
 def RandomDataset():
-    G = Graph.Barabasi(n=4096, m=8,directed=True)
+    G = nx.barabasi_albert_graph(4096, 8)
     # Transform into dataframe of edges
-    source_nodes = [edge.source for edge in G.es]
-    target_nodes = [edge.target for edge in G.es]
+    source_nodes = [edge[0] for edge in G.edges()]
+    target_nodes = [edge[1] for edge in G.edges()]
     df = pd.DataFrame({'source': source_nodes,'target': target_nodes})
     return df
 

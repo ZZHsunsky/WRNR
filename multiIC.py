@@ -32,10 +32,9 @@ def multiIC(G, p, name, param, result_dict, result_lock):
         result_dict[name] = np.mean(spread)
     return
 
-def main(G, dataset, S, p=0.1, mc = 10000):
+def main(G, dataset, S, p=0.1, mc = 10000, num_cores = 8):
 
     # 读取CPU核心数量，加入进程池
-    num_cores = int(mp.cpu_count())
     pool = mp.Pool(num_cores)
 
     step = mc // num_cores
