@@ -10,7 +10,7 @@ import sys
 def multiIC(G, p, name, param, result_dict, result_lock):
     spread = []
     mc, S = param[0], param[1]
-    for _ in range(mc):
+    for _ in range(100):
         
         # Simulate propagation process      
         new_active, A = S[:], S[:]

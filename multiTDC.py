@@ -4,7 +4,10 @@ import time
 import imbase
 import multiprocessing  as mp
 import sys
+import math
 
+def cost(x):
+    return math.log2(x + 1)
 
 def multiDDI(G, p, name, param, result_dict, result_lock):
     Q = []
@@ -22,7 +25,8 @@ def multiDDI(G, p, name, param, result_dict, result_lock):
             new_children = list(set(targets) - set(A))
             A += new_children
             deep += 1
-        Q.append([idx, tdvalue])
+
+        Q.append([idx, tdvalue, cost(tdvalue)])
     
     with result_lock:
         result_dict[name] = Q
@@ -36,7 +40,6 @@ def main(G, k = 50, dataset="Random", p=0.1, num_cores=8):
 
     # 读取CPU核心数量，加入进程池
     pool = mp.Pool(num_cores)
-
 
     # Source节点个数
     n = len(candidates)
