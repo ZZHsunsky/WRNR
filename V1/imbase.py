@@ -47,7 +47,7 @@ def IC(G,S,p=0.5,mc=1000):
             
         spread.append(len(A))
         
-    return(np.mean(spread))
+    return(round(np.mean(spread), 3))
 
 def celf(G,k,p=0.5,mc=1000):   
     """
@@ -161,7 +161,7 @@ def ris(G: pd.DataFrame, k: int, p=0.5, mc=1000):
         R = [rrs for rrs in R if seed not in rrs]
 
         # Record Time
-        timelapse.append(time.time() - start_time)
+        timelapse.append(round(time.time() - start_time, 4))
     return(sorted(SEED),timelapse)
 
 def tdc(G: pd.DataFrame, k:int, p = 0.5, mc=1000):
@@ -223,7 +223,7 @@ def maxDegree(G: pd.DataFrame, k:int, p = 0.5):
     for _ in range(k):
         SEED.append(Q[0][0])
         Q = Q[1:]
-        timelapse.append(time.time() - start_time)
+        timelapse.append(round(time.time() - start_time, 4))
 
     return(sorted(SEED),timelapse)
 
