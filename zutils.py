@@ -11,8 +11,7 @@ LastEditTime: 2020-09-25 10:29:40
 import time
 import math
 from typing import List
-from zgraph import *
-from zbitmap import *
+from zclass import ZGraph, ZBitGraph, Bitmap
 from collections import Counter
 from functools import wraps
 from tqdm import *

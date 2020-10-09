@@ -18,10 +18,11 @@ def celf_in_origin_network(k: int, g: ZGraph, mc = 100) ->List[int]:
         return candidates
 
     sigmas = []
-    pbar = tqdm(total=100)
+
+    # pbar = tqdm(total=100)
     for _, vertex  in enumerate(candidates):
-        if  _ % (len(candidates) // 10) == 0:
-            pbar.update(10)
+        # if  _ % (len(candidates) // 10) == 0:
+        #     pbar.update(10)
         sigmas.append(calc_celf_sigma_in_network([vertex], g, mc=mc))
 
     Q = sorted(zip(candidates,sigmas), key = lambda x: x[1],reverse=True)

@@ -8,7 +8,43 @@ LastEditTime: 2020-10-09 18:02:51
 '''
 from typing import List, Dict
 import random
-from zbitmap import Bitmap
+from collections import defaultdict
+import math
+
+class Bitmap:
+    def __init__(self, length):
+        self.bitmap = 0
+
+    def set(self, num):
+        self.bitmap |= (1 << num)
+    
+    def or_other_bitmap(self, other):
+        self.bitmap |= other.bitmap
+
+    def or_other_bitmap_ret_diff(self, other) -> List[int]:
+        xor = self.bitmap ^ other.bitmap
+        self.bitmap |= other.bitmap
+        return other.bitmap & xor
+
+
+def convert_bitmap_to_num_arr(bitmap: Bitmap) -> List[int]:
+    """
+        将bitmap中的为1的下标按照数组的方式返回
+    """
+    return convert_int_to_num_arr(bitmap.bitmap)
+
+
+
+def convert_int_to_num_arr(bitmap: List[int]) -> List[int]:
+    if bitmap == 0:
+        return []
+    
+    ret = []
+    for bit_idx in range(int(math.log2(bitmap)) + 1):
+        if bitmap & (1 << bit_idx):
+            ret.append(bit_idx)
+    return ret
+    
 class ZGraph:
     """
         graph data structure to store the network
@@ -156,20 +192,21 @@ class ZGraph:
                 edges[vertex] = neighbors
         return edges
 
-    def find_scc(self):
+    def find_scc(self,):
         n = self.max_v + 1
         dfn = [-1 for i in range(n)]
         low = [-1 for i in range(n)]
         in_statck = [False for i in range(n)]
         dfncnt = 0
-        scc = [] # 用来保存 strong connect commponet 编号
+        scc = [-1 for i in range(n)] # 用来保存 strong connect commponet 编号
         sc = 0
         stack = [-1 for i in range(n)]
         tp = 0 # 表示栈顶
+        temp_network = {}
         def tarjan(u):
             nonlocal dfn, low, dfncnt, scc, sc, tp
 
-            low[u] = dfn[u] =dfncnt
+            low[u] = dfn[u] = dfncnt
             dfncnt += 1
 
             tp += 1
@@ -177,6 +214,7 @@ class ZGraph:
 
             in_statck[u] = True
             neighbors = self.get_neighbors_keys(u)
+            temp_network[u] = neighbors
 
             for v in neighbors:
                 if dfn[v] == -1:
@@ -187,16 +225,14 @@ class ZGraph:
             
             if dfn[u] == low[u]:
                 sc += 1
-                temp_scc = []
                 while stack[tp] != u:
-                    temp_scc.append(stack[tp])
+                    scc[stack[tp]] = sc
                     in_statck[stack[tp]] = False
                     tp -= 1
                 
-                temp_scc.append(stack[tp])
-                in_statck[stack[tp]] = False
+                scc[u] = sc
+                in_statck[u] = False
                 tp -= 1
-                scc.append(temp_scc)
         
         for u in self.get_network_candidates():
             if dfn[u] == -1:
@@ -205,11 +241,129 @@ class ZGraph:
         print("共有强连通量：", sc)
         print("共有节点：", self.max_v)
 
+        # 构建缩点之后的图
+        uninoFind = UnionFind(sc)
+
+        for u in self.get_network_candidates():
+            for v in temp_network[u]:
+                if scc[u] == scc[v]:
+                    continue
+                uninoFind.union(scc[v], scc[u])
+        
+        print("共有并查集", uninoFind.sets_count)
+        
+
+
+def pick_different(s: int, t: int) -> List[int]:
+    return pick_one_set_bits(t & ( ~ ( 1 << s )))
+
+def pick_one_set_bits(t: int) -> List[int]:
+    ret = []
+    idx = 0
+    while t:
+        if t & 1:
+            ret.append(idx)
+        idx += 1
+        t >>= 1
+    return ret
+
+def cnt_onet_set_bits(t: int) -> int:
+    cnt = 0
+    while t:
+        if t & 1:
+            cnt += 1
+        t >>= 1
+    return cnt
+
+class ZBitGraph:
+    """
+        构造网络拓扑图，通过BitMap保存
+    """
+    def __init__(self):
+        self.network = dict()
+        self.max_v = 0
+        self.cnt_e = 0
+    
+    def add_vertex(self, vertex: int):
+        if vertex not in self.network:
+            self.network[vertex] = 1 << vertex
+            self.max_v = max(self.max_v, vertex)
+    
+    def add_edge(self, s: int, e: int):
+        self.add_vertex(s)
+        self.add_vertex(e)
+
+        if self.network[s] & (1 << e) == 1:
+            return
+        else:
+            self.network[s] |= (1 << e)
+            self.cnt_e += 1
+    
+    def simulate_propagation(self):
+        visited = defaultdict(bool)
+
+        for vertex in self.network.keys():
+            all_actived = self.network[vertex]
+            new_actived = pick_different(vertex, all_actived)
+            while new_actived:
+                temp_actived = all_actived
+                for e in new_actived:
+                    temp_actived |= self.network[e]
+                    if visited[e]:
+                        all_actived |= self.network[e]
+                new_actived = pick_one_set_bits(temp_actived ^ all_actived)
+                all_actived |= temp_actived
+
+            visited[vertex] = True
+            self.network[vertex] = all_actived
+    
+    def get_vertex_spread(self, vertex: int) -> int:
+        if vertex not in self.network:
+            return 0
+        return cnt_onet_set_bits(self.network[vertex])
+
+    def discount_spread(self, spread:int):
+        for vertex in self.network.keys():
+            xor = self.network[vertex] ^ spread
+            self.network[vertex] &= xor
+
+
+class UnionFind(object):
+    """并查集类"""
+    def __init__(self, n):
+        """长度为n的并查集"""
+        self.uf = [-1 for i in range(n)]    # 列表0位置空出
+        self.sets_count = n                     # 判断并查集里共有几个集合, 初始化默认互相独立
+
+    def find(self, p):
+        """查找p的根结点(祖先)"""
+        r = p                                   # 初始p
+        while self.uf[p] > 0:
+            p = self.uf[p]
+        while r != p:                           # 路径压缩, 把搜索下来的结点祖先全指向根结点
+            self.uf[r], r = p, self.uf[r]
+        return p
+
+
+    def union(self, f, c):
+        """
+            @param f, father
+            @param c, child
+            原图中是存在father到child的路径
+            并查集中是child指向father
+        """
+        froot = self.find(f)
+        croot = self.find(c)                    # 连通后集合总数减一
+
+    def is_connected(self, p, q):
+        """判断pq是否已经连通"""
+        return self.find(p) == self.find(q)     # 即判断两个结点是否是属于同一个祖先
+
 if __name__ == "__main__":
-    g = ZGraph()
-    edges = [[0, 2], [2, 1], [1, 0], [2, 3], [3, 4], [4, 5], [3, 6], [6, 2], [2, 7], [7, 6]]
+    edges = [[0, 2], [2, 1]]
+    unionFind = UnionFind(3)
     for edge in edges:
-        s, e = edge
-        w = 1
-        g.add_edge(s, e, w)
-    g.find_scc()
+        unionFind.union(edge[0], edge[1])
+    
+    print(unionFind.sets_count)
+    print(unionFind.uf)
