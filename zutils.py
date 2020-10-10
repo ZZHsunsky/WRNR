@@ -5,13 +5,15 @@ version:
 Author: sueRimn
 Date: 2020-09-14 18:24:34
 LastEditors: zehao zhao
-LastEditTime: 2020-09-25 10:29:40
+LastEditTime: 2020-10-10 11:19:31
 '''
 
 import time
 import math
-from typing import List
+import random
+from typing import List, Dict
 from zclass import ZGraph, ZBitGraph, Bitmap
+from zclass import convert_bitmap_to_num_arr, convert_int_to_num_arr
 from collections import Counter
 from functools import wraps
 from tqdm import *
@@ -208,7 +210,7 @@ def calc_sigma_in_network_with_bitmap(s: List[int], g: ZGraph, with_w=False) -> 
     return convert_bitmap_to_num_arr(sigma)
 
 def calc_sigma_in_sub_networks_with_bitmap(s: List[int], networks: List[ZGraph]) -> float:
-    sigma = sum([len(calc_sigma_in_network_with_bitmap(s, g) for f in networks)])
+    sigma = sum([len(calc_sigma_in_network_with_bitmap(s, g) for g in networks)])
     return round(sigma / len(networks), 3)
 
 

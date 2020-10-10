@@ -4,11 +4,11 @@ version:
 Author: zehao zhao
 Date: 2020-09-16 15:39:03
 LastEditors: zehao zhao
-LastEditTime: 2020-10-09 18:02:51
+LastEditTime: 2020-10-10 11:24:07
 '''
 from typing import List, Dict
 import random
-from collections import defaultdict
+from collections import defaultdict, Counter
 import math
 
 class Bitmap:
@@ -191,69 +191,8 @@ class ZGraph:
             if len(neighbors) > 0:
                 edges[vertex] = neighbors
         return edges
-
-    def find_scc(self,):
-        n = self.max_v + 1
-        dfn = [-1 for i in range(n)]
-        low = [-1 for i in range(n)]
-        in_statck = [False for i in range(n)]
-        dfncnt = 0
-        scc = [-1 for i in range(n)] # 用来保存 strong connect commponet 编号
-        sc = 0
-        stack = [-1 for i in range(n)]
-        tp = 0 # 表示栈顶
-        temp_network = {}
-        def tarjan(u):
-            nonlocal dfn, low, dfncnt, scc, sc, tp
-
-            low[u] = dfn[u] = dfncnt
-            dfncnt += 1
-
-            tp += 1
-            stack[tp] = u
-
-            in_statck[u] = True
-            neighbors = self.get_neighbors_keys(u)
-            temp_network[u] = neighbors
-
-            for v in neighbors:
-                if dfn[v] == -1:
-                    tarjan(v)
-                    low[u] = min(low[u], low[v])
-                elif in_statck[v]:
-                    low[u] = min(low[u], dfn[v])
-            
-            if dfn[u] == low[u]:
-                sc += 1
-                while stack[tp] != u:
-                    scc[stack[tp]] = sc
-                    in_statck[stack[tp]] = False
-                    tp -= 1
-                
-                scc[u] = sc
-                in_statck[u] = False
-                tp -= 1
         
-        for u in self.get_network_candidates():
-            if dfn[u] == -1:
-                tarjan(u)
         
-        print("共有强连通量：", sc)
-        print("共有节点：", self.max_v)
-
-        # 构建缩点之后的图
-        uninoFind = UnionFind(sc)
-
-        for u in self.get_network_candidates():
-            for v in temp_network[u]:
-                if scc[u] == scc[v]:
-                    continue
-                uninoFind.union(scc[v], scc[u])
-        
-        print("共有并查集", uninoFind.sets_count)
-        
-
-
 def pick_different(s: int, t: int) -> List[int]:
     return pick_one_set_bits(t & ( ~ ( 1 << s )))
 
@@ -328,42 +267,16 @@ class ZBitGraph:
             self.network[vertex] &= xor
 
 
-class UnionFind(object):
-    """并查集类"""
-    def __init__(self, n):
-        """长度为n的并查集"""
-        self.uf = [-1 for i in range(n)]    # 列表0位置空出
-        self.sets_count = n                     # 判断并查集里共有几个集合, 初始化默认互相独立
+class TreeNode:
 
-    def find(self, p):
-        """查找p的根结点(祖先)"""
-        r = p                                   # 初始p
-        while self.uf[p] > 0:
-            p = self.uf[p]
-        while r != p:                           # 路径压缩, 把搜索下来的结点祖先全指向根结点
-            self.uf[r], r = p, self.uf[r]
-        return p
-
-
-    def union(self, f, c):
-        """
-            @param f, father
-            @param c, child
-            原图中是存在father到child的路径
-            并查集中是child指向father
-        """
-        froot = self.find(f)
-        croot = self.find(c)                    # 连通后集合总数减一
-
-    def is_connected(self, p, q):
-        """判断pq是否已经连通"""
-        return self.find(p) == self.find(q)     # 即判断两个结点是否是属于同一个祖先
-
-if __name__ == "__main__":
-    edges = [[0, 2], [2, 1]]
-    unionFind = UnionFind(3)
-    for edge in edges:
-        unionFind.union(edge[0], edge[1])
+    def __init__(self, v, w):
+        self.v = v # 节点编号
+        self.w = w # 节点权值
+        self.subW = 0 # 节点为根时子树的权值和
+        self.children: List[TreeNode] = []
     
-    print(unionFind.sets_count)
-    print(unionFind.uf)
+    def add_child(self, node: TreeNode):
+        self.children.append(node)
+    
+    def get_child_length(self) -> int:
+        return len(self.children)
