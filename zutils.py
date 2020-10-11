@@ -11,13 +11,13 @@ LastEditTime: 2020-10-10 11:19:31
 import time
 import math
 import random
-from typing import List, Dict
-from zclass import ZGraph, ZBitGraph, Bitmap
+from typing import List, Dict, Set
+from zclass import ZGraph, ZBitGraph, Bitmap, TreeNode
 from zclass import convert_bitmap_to_num_arr, convert_int_to_num_arr
 from collections import Counter
 from functools import wraps
 from tqdm import *
-
+import logging
 
 def blue_print(s: str):
     return ("\033[1;34m{}\033[0m".format(s))
@@ -37,11 +37,11 @@ def cyan_print(s: str):
 def fn_timer(function):
     @wraps(function)
     def function_timer(*args, **kwargs):
-        print(  "\n" + "*" * 30 + "\n" + blue_print("[Start] ") + green_print(getattr(function, '__name__').upper()) +"\n" + "*" * 30)
+        logging.info(  "\n" + "*" * 30 + "\n" + blue_print("[Start] ") + green_print(getattr(function, '__name__').upper()) +"\n" + "*" * 30)
         t0 = time.time()
         result = function(*args, **kwargs)
         t1 = time.time()
-        print(blue_print("[Done] ") + green_print(getattr(function, '__name__').upper()) + orange_print(" " + str(t1-t0)) + " Seconds")
+        logging.info(blue_print("[Done] ") + green_print(getattr(function, '__name__').upper()) + orange_print(" " + str(t1-t0)) + " Seconds")
         return result
     return function_timer
 
@@ -60,7 +60,7 @@ def build_sub_networks(network_type: str, cnt: int):
             continue
         os.remove(file_dir + "/" + file)
 
-    print(blue_print("[Start] ") + green_print(network_type + " Dataset ") + "Build Sub Networks!")
+    logging.info(blue_print("[Start] ") + green_print(network_type + " Dataset ") + "Build Sub Networks!")
     for i in tqdm(range(cnt)):
         g = ZGraph(sub_model=True)
         load_network(g, network_type)
@@ -73,14 +73,14 @@ def fix_w_in_network(network_type):
     file_path = file_dir + network_type + '.txt'
     import os
     if not os.path.exists(file_path):
-        print(red_print("[Error] ") + green_print(network_type + " Dataset ") + "not exists!")
+        logging.info(red_print("[Error] ") + green_print(network_type + " Dataset ") + "not exists!")
         return None
     
     lines = open(file_path).readlines()
     fix_file_path = file_dir + network_type + 'Fix.txt'
     fix_file = open(fix_file_path, 'w')
     fix_file.write(lines[0])
-    print(blue_print("[Start] ") + green_print(network_type + " Dataset ") + "Fix Action!")
+    logging.info(blue_print("[Start] ") + green_print(network_type + " Dataset ") + "Fix Action!")
     for line in tqdm(lines[1:]):
         w = round(random.uniform(0, 0.3), 3)
         w = " " + str(w) + "\n"
@@ -177,18 +177,19 @@ def calc_sigma_in_sub_networks(s: List[int], networks: List[ZGraph]) -> float:
         sigma += len(temp_actived_set)
     
     sigma = round(sigma / len(networks), 3)
-    print("Sigma is " + cyan_print(str(sigma)) + " with Seed " + cyan_print(str(s)))
+    logging.info("Sigma is " + cyan_print(str(sigma)) + " with Seed " + cyan_print(str(s)))
     return sigma
 
 
 def calc_sigma_in_random_networks(s: List[int], g: ZGraph, mc=1000) -> float:
     sigma = 0
+    mc = mc * 10
     for i in range(mc):
         temp_actived_set = calc_sigma_in_network(s, g, with_w=True)
         sigma += len(temp_actived_set)
     
     sigma = round(sigma / mc, 3)
-    print("Sigma is " + cyan_print(str(sigma)) + " with Seed " + cyan_print(str(s)))
+    logging.info("Sigma is " + cyan_print(str(sigma)) + " with Seed " + cyan_print(str(s)))
     return sigma
 
 def calc_sigma_in_network_with_bitmap(s: List[int], g: ZGraph, with_w=False) -> List[int]:
@@ -213,6 +214,5 @@ def calc_sigma_in_sub_networks_with_bitmap(s: List[int], networks: List[ZGraph])
     sigma = sum([len(calc_sigma_in_network_with_bitmap(s, g) for g in networks)])
     return round(sigma / len(networks), 3)
 
-
 if __name__ == "__main__":
-    fix_w_in_network('NetPHY')
+    fix_w_in_network('NetHEPT')

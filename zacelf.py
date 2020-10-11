@@ -19,12 +19,13 @@ def celf_in_origin_network(k: int, g: ZGraph, mc = 100) ->List[int]:
 
     sigmas = []
 
-    # pbar = tqdm(total=100)
+    pbar = tqdm(total=100)
     for _, vertex  in enumerate(candidates):
-        # if  _ % (len(candidates) // 10) == 0:
-        #     pbar.update(10)
+        if  _ % (len(candidates) // 10) == 0:
+            pbar.update(10)
         sigmas.append(calc_celf_sigma_in_network([vertex], g, mc=mc))
-
+    pbar.close()
+    
     Q = sorted(zip(candidates,sigmas), key = lambda x: x[1],reverse=True)
 
     S, spread, Q = [Q[0][0]], Q[0][1], Q[1:]
@@ -42,6 +43,8 @@ def celf_in_origin_network(k: int, g: ZGraph, mc = 100) ->List[int]:
         S.append(Q[0][0])    
 
         Q = Q[1:]
+
+    time.sleep(1)
     return S
 
 @fn_timer

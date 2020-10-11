@@ -8,6 +8,7 @@ LastEditTime: 2020-10-10 11:29:30
 '''
 from zutils import *
 from zclass import ZBitGraph, TreeNode
+import logging
 
 @fn_timer
 def tdc_node_selection(k: int, g: ZGraph, mc=1000):
@@ -16,9 +17,13 @@ def tdc_node_selection(k: int, g: ZGraph, mc=1000):
         return candidates
     
     Seed = []
-    # for g in tqdm(networks):
+    pbar = tqdm(total=100)
     for _ in range(mc):
+        if  _ % (mc // 10) == 0:
+            pbar.update(10)
         Seed.extend(bit_graph_selection(k, g,))
+    pbar.close()
+
     C = Counter(Seed)
     return [x[0] for x in C.most_common(k)]
 
@@ -40,7 +45,7 @@ def bit_graph_selection(k: int, g: ZGraph) -> List[int]:
             bitG.discount_spread(spread)
         # else:
         #     for key, v in bitG.network.items():
-        #         print(key, bin(v))
+        #         logging.debug(key, bin(v))
 
         max_v, best = 0, -1
         for vertex in candidates:
@@ -57,6 +62,18 @@ def bit_graph_selection(k: int, g: ZGraph) -> List[int]:
     
     return S
 
+@fn_timer
+def tdc_with_scc(k: int, g: ZGraph, mc=1000) -> List[int]:
+    Seed = []
+    pbar = tqdm(total=100)
+    for _ in range(mc):
+        if  _ % (mc // 10) == 0:
+            pbar.update(10)
+        Seed += constrouct_scc_forest(k, g)
+    pbar.close()
+    
+    C = Counter(Seed)
+    return [x[0] for x in C.most_common(k)]
 
 def constrouct_scc_forest(k: int, g: ZGraph) -> List[int]:
     n = g.max_v + 1
@@ -68,6 +85,7 @@ def constrouct_scc_forest(k: int, g: ZGraph) -> List[int]:
     sc = 0 # 强连通量的个数
     scc = [-1 for i in range(n)] # 用来保存强连通分量的编号
     sccd = {}
+
     forest: Dict[int, TreeNode] = {} # 用来保存缩点后的森林
 
     stack = [-1 for i in range(n)]
@@ -83,7 +101,7 @@ def constrouct_scc_forest(k: int, g: ZGraph) -> List[int]:
         stack[tp] = u
 
         in_statck[u] = True
-        neighbors = g.get_neighbors_keys(u)
+        neighbors = g.get_neighbors_keys_with_w(u)
         temp_network[u] = neighbors
 
         for v in neighbors:
@@ -94,7 +112,6 @@ def constrouct_scc_forest(k: int, g: ZGraph) -> List[int]:
                 low[u] = min(low[u], dfn[v])
         
         if dfn[u] == low[u]:
-            sc += 1
             temp_component = [u]
             while stack[tp] != u:
                 temp_component.append(stack[tp])
@@ -107,14 +124,15 @@ def constrouct_scc_forest(k: int, g: ZGraph) -> List[int]:
             tp -= 1
             sccd[sc] = temp_component
             forest[sc] = TreeNode(sc, len(temp_component))
+            sc += 1
+
     
     for u in g.get_network_candidates():
         if dfn[u] == -1:
             tarjan(u)
     
-    print("共有强连通量：", sc)
-    print("共有节点：", g.max_v)
-
+    logging.debug("构建了强连通分量")
+    is_roots = [True for i in range(sc)]
     # 构建缩点之后的森林
     for u in g.get_network_candidates():
         for v in temp_network[u]:
@@ -122,22 +140,88 @@ def constrouct_scc_forest(k: int, g: ZGraph) -> List[int]:
                 continue
 
             forest[scc[u]].add_child(forest[scc[v]])
+            is_roots[scc[v]] = False
     
-    max_w, max_scc_idx = -1, -1
+    roots_idx = [_ for (_, i) in enumerate(is_roots) if i]
+    roots = [forest[i] for i in roots_idx]
+    logging.debug("构建了树")
 
-    def dfs(node: TreeNode):
-        if node.subW > 0:
-            return node.subW
+    bulil_two_level_tree(forest, roots_idx)
+    logging.debug("构建了两级树")
 
-        node.subW = w
 
-        for child in node.children:
-            node.subW += dfs(child)
-
-        return node.subW
+    k_scc = pick_k_scc_from_foreast(k, roots)
+    logging.debug("选择了k个分量")
+    k_nodes = []
+    for sc_idx in k_scc:
+        k_nodes += sccd[sc_idx]
     
-    for scc_idx, node in forest.items():
-        temp_w = dfs(node)
-        if max_w < temp_w:
-            max_w, max_scc_idx = temp_w, scc_idx
-         
+    return k_nodes
+
+def bulil_two_level_tree(forest: Dict[int, TreeNode], roots: List[bool]):
+
+    def get_subtree(root: TreeNode):
+        if root.get_sub:
+            return root.children.copy()
+        
+        sub_tree = root.children.copy()
+
+        for child in root.children.values():
+            sub_tree.update(get_subtree(child))
+
+        root.children = sub_tree
+        root.get_sub = True
+        return sub_tree
+
+    for root_idx in roots:
+        root = forest[root_idx]
+        get_subtree(root)
+
+    for root_idx in roots:
+        root = forest[root_idx]
+        for child in root.children.values():
+            root.w += child.w
+            child.children = None
+            child.set_father(root)
+
+
+def pick_k_scc_from_foreast(k: int, roots: List[TreeNode]):
+    k_scc = []
+    top_scc = []
+    
+    def discount_father_w(root: TreeNode, w=0):
+        for father in root.fathers.values():
+            father.w -= root.w
+
+    for i in range(k):
+        roots.sort(key=lambda node: node.w, reverse=True)
+        top = roots[0]
+        # 加入subw最大的
+        k_scc.append(top.v)
+
+        for child in top.children.values():
+            discount_father_w(child)
+        
+        roots = roots[1:]
+
+    return k_scc
+
+def judge_tree_has_cycel(root: TreeNode) -> bool:
+    visited = set()
+
+    def dfs(root: TreeNode):
+        print(root.v)
+        ret = False
+        
+        if root.v in visited:
+            print(visited, root.v)
+            return True
+        
+        visited.add(root.v)
+        
+        for child in root.children.values():
+            ret = ret or dfs(child)
+        
+        return ret
+    
+    return dfs(root)

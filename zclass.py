@@ -11,6 +11,26 @@ import random
 from collections import defaultdict, Counter
 import math
 
+
+class TreeNode:
+
+    def __init__(self, v, w):
+        self.v = v # 节点编号
+        self.w = w # 节点权值
+        self.get_sub = False
+        self.fathers: Dict[int, TreeNode] = {}
+        self.children: Dict[int, TreeNode] = {}
+    
+    def add_child(self, node):
+        self.children[node.v] = node
+
+    def get_child_length(self) -> int:
+        return len(list(self.children.keys()))
+    
+    def set_father(self, f):
+        if f not in self.fathers:
+            self.fathers[f.v] = f
+
 class Bitmap:
     def __init__(self, length):
         self.bitmap = 0
@@ -191,6 +211,9 @@ class ZGraph:
             if len(neighbors) > 0:
                 edges[vertex] = neighbors
         return edges
+    
+    def draw_with_networkx(self):
+        pass
         
         
 def pick_different(s: int, t: int) -> List[int]:
@@ -266,17 +289,3 @@ class ZBitGraph:
             xor = self.network[vertex] ^ spread
             self.network[vertex] &= xor
 
-
-class TreeNode:
-
-    def __init__(self, v, w):
-        self.v = v # 节点编号
-        self.w = w # 节点权值
-        self.subW = 0 # 节点为根时子树的权值和
-        self.children: List[TreeNode] = []
-    
-    def add_child(self, node: TreeNode):
-        self.children.append(node)
-    
-    def get_child_length(self) -> int:
-        return len(self.children)
