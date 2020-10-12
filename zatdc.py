@@ -4,11 +4,12 @@ version:
 Author: zehao zhao
 Date: 2020-09-25 10:18:27
 LastEditors: zehao zhao
-LastEditTime: 2020-10-10 11:29:30
+LastEditTime: 2020-10-12 09:21:41
 '''
 from zutils import *
 from zclass import ZBitGraph, TreeNode
 import logging
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 @fn_timer
 def tdc_node_selection(k: int, g: ZGraph, mc=1000):
@@ -64,18 +65,28 @@ def bit_graph_selection(k: int, g: ZGraph) -> List[int]:
 
 @fn_timer
 def tdc_with_scc(k: int, g: ZGraph, mc=1000) -> List[int]:
+    # Seed = []
+    # pbar = tqdm(total=100)
+    # for _ in range(mc):
+    #     if  _ % (mc // 10) == 0:
+    #         pbar.update(10)
+    #     Seed += constrouct_scc_forest(k, g)
+    # pbar.close()
+
+    param = {'k': k, 'g': g}
+
     Seed = []
-    pbar = tqdm(total=100)
-    for _ in range(mc):
-        if  _ % (mc // 10) == 0:
-            pbar.update(10)
-        Seed += constrouct_scc_forest(k, g)
-    pbar.close()
-    
+    with ProcessPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(constrouct_scc_forest, param) for i in range(mc)}
+        for f in as_completed(futures):
+            Seed += f.result()
     C = Counter(Seed)
     return [x[0] for x in C.most_common(k)]
 
-def constrouct_scc_forest(k: int, g: ZGraph) -> List[int]:
+def constrouct_scc_forest(param: dict) -> List[int]:
+    k: int = param.get('k', 10)
+    g: ZGraph = param.get('g', None)
+    
     n = g.max_v + 1
     dfn = [-1 for i in range(n)]
     low = [-1 for i in range(n)]
