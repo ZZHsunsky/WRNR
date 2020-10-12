@@ -5,7 +5,7 @@ version:
 Author: sueRimn
 Date: 2020-09-14 18:24:34
 LastEditors: zehao zhao
-LastEditTime: 2020-10-10 11:19:31
+LastEditTime: 2020-10-12 17:59:56
 '''
 
 import time
@@ -41,7 +41,7 @@ def fn_timer(function):
         t0 = time.time()
         result = function(*args, **kwargs)
         t1 = time.time()
-        logging.info(blue_print("[Done] ") + green_print(getattr(function, '__name__').upper()) + orange_print(" " + str(t1-t0)) + " Seconds")
+        logging.info(blue_print("[Done] ") + green_print(getattr(function, '__name__').upper()) + orange_print(" " + str(round(t1-t0, 5))) + " Seconds")
         return result
     return function_timer
 

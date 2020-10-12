@@ -4,7 +4,7 @@ version:
 Author: zehao zhao
 Date: 2020-09-14 18:24:34
 LastEditors: zehao zhao
-LastEditTime: 2020-10-12 09:22:05
+LastEditTime: 2020-10-12 17:48:21
 '''
 import sys
 from zutils import *
@@ -34,7 +34,6 @@ if __name__ == "__main__":
     original_network = ZGraph()
     load_network(original_network, network_type)
     
-
     # violence
     # seed = violence_in_sub_networks(k, original_network)     #[56, 58, 53]
     # print(blue_print("[Cache] ") + green_print("VIOLENCE_IN_SUB_NETWORKS ") + orange_print("0.0 ") + "Seconds")
@@ -42,6 +41,7 @@ if __name__ == "__main__":
 
     # CELF
     # celf_seed = celf_in_origin_network(k, original_network, mc=mc)
+    # celf_seed = [2119, 1175, 2250, 156, 592]
     # calc_sigma_in_random_networks(celf_seed, original_network, mc)
 
     # # max degree
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # # ris 
     # reverse_network = ZGraph()
     # load_network(reverse_network, network_type, reverse=True)
-    # ris_seed = tim_node_selection(k, reverse_network, mc * 20)
+    # ris_seed = tim_node_selection(k, reverse_network, mc * 300)
     # calc_sigma_in_random_networks(ris_seed,  original_network, mc)
 
     # #tdc

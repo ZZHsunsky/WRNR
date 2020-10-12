@@ -4,12 +4,13 @@ version:
 Author: zehao zhao
 Date: 2020-09-25 10:18:27
 LastEditors: zehao zhao
-LastEditTime: 2020-10-12 09:21:41
+LastEditTime: 2020-10-12 17:47:52
 '''
 from zutils import *
 from zclass import ZBitGraph, TreeNode
 import logging
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed, Future
+from multiprocessing import cpu_count
 
 @fn_timer
 def tdc_node_selection(k: int, g: ZGraph, mc=1000):
@@ -65,21 +66,20 @@ def bit_graph_selection(k: int, g: ZGraph) -> List[int]:
 
 @fn_timer
 def tdc_with_scc(k: int, g: ZGraph, mc=1000) -> List[int]:
-    # Seed = []
-    # pbar = tqdm(total=100)
-    # for _ in range(mc):
-    #     if  _ % (mc // 10) == 0:
-    #         pbar.update(10)
-    #     Seed += constrouct_scc_forest(k, g)
-    # pbar.close()
 
     param = {'k': k, 'g': g}
-
+    pbar = tqdm(total=100)
+    
     Seed = []
-    with ProcessPoolExecutor(max_workers=8) as executor:
-        futures = {executor.submit(constrouct_scc_forest, param) for i in range(mc)}
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(constrouct_scc_forest, param) for i in range(1)}
+        cnt = 0
         for f in as_completed(futures):
+            cnt += 1
+            if mc > 10 and cnt % (mc // 10) == 0:
+                pbar.update(10)
             Seed += f.result()
+    pbar.close()
     C = Counter(Seed)
     return [x[0] for x in C.most_common(k)]
 
@@ -112,7 +112,7 @@ def constrouct_scc_forest(param: dict) -> List[int]:
         stack[tp] = u
 
         in_statck[u] = True
-        neighbors = g.get_neighbors_keys_with_w(u)
+        neighbors = g.get_neighbors_keys(u)
         temp_network[u] = neighbors
 
         for v in neighbors:
@@ -141,8 +141,10 @@ def constrouct_scc_forest(param: dict) -> List[int]:
     for u in g.get_network_candidates():
         if dfn[u] == -1:
             tarjan(u)
+
+    logging.debug("构建了{}强连通分量".format(sc))
+    logging.debug("共计{}个节点".format(n))
     
-    logging.debug("构建了强连通分量")
     is_roots = [True for i in range(sc)]
     # 构建缩点之后的森林
     for u in g.get_network_candidates():
@@ -165,7 +167,7 @@ def constrouct_scc_forest(param: dict) -> List[int]:
     logging.debug("选择了k个分量")
     k_nodes = []
     for sc_idx in k_scc:
-        k_nodes += sccd[sc_idx]
+        k_nodes.append(random.choice(sccd[sc_idx]))
     
     return k_nodes
 
