@@ -4,7 +4,7 @@ version:
 Author: zehao zhao
 Date: 2020-10-12 11:08:11
 LastEditors: zehao zhao
-LastEditTime: 2020-10-12 18:53:34
+LastEditTime: 2020-10-13 18:54:39
 '''
 from zutils import *
 from zclass import ZBitGraph, TreeNode
@@ -104,7 +104,6 @@ def zmd_node_select(g: ZGraph):
     for i in range(len(scc)):
         if scc[i] == 1627:
             cnt += 1
-    print(cnt)
     for u in g.network.keys():
         forest[u] = ZMDTree(u, scc[u])
     
@@ -112,8 +111,16 @@ def zmd_node_select(g: ZGraph):
 
     visited=dict()
     def in_dfs(root: int, ancestor: ZMDTree, last = -1, decay = 1):
-        if (last > -1 and root == ancestor.v) or scc[root] != ancestor.sc:
+        nonlocal visited
+        if scc[root] != ancestor.sc:
             return
+
+        if last > -1 and root == ancestor.v:
+            print(root)
+            print("+" * 50)
+            return
+        
+
         visited[root] = True
         if last > -1:
             decay = decay * g.network[last][root]
@@ -124,6 +131,8 @@ def zmd_node_select(g: ZGraph):
                 continue
             in_dfs(v, ancestor, root, decay)
 
+        print(root)
+        print(visited)
         visited[root] = False 
 
     # 构造强连通分量内部的连接

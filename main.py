@@ -4,7 +4,7 @@ version:
 Author: zehao zhao
 Date: 2020-09-14 18:24:34
 LastEditors: zehao zhao
-LastEditTime: 2020-10-12 17:48:21
+LastEditTime: 2020-10-13 11:34:40
 '''
 import sys
 from zutils import *
@@ -30,10 +30,12 @@ if __name__ == "__main__":
     # 加载原生图
     original_network = ZGraph()
     load_network(original_network, network_type)
-    
     seed = zmd_node_select(original_network)
+    exit(0)
+
     calc_sigma_in_random_networks(seed, original_network, mc)
 
+    
     # violence
     # seed = violence_in_sub_networks(k, original_network)     #[56, 58, 53]
     # print(blue_print("[Cache] ") + green_print("VIOLENCE_IN_SUB_NETWORKS ") + orange_print("0.0 ") + "Seconds")

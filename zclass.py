@@ -4,7 +4,7 @@ version:
 Author: zehao zhao
 Date: 2020-09-16 15:39:03
 LastEditors: zehao zhao
-LastEditTime: 2020-10-10 11:24:07
+LastEditTime: 2020-10-13 09:52:31
 '''
 from typing import List, Dict
 import random
@@ -88,6 +88,7 @@ class ZGraph:
         :param e: end vertex
         :param w: edge weight or proability
         """
+
         self.add_vertex(s)
         self.add_vertex(e)
         if e in self.network[s]:
@@ -213,7 +214,23 @@ class ZGraph:
         return edges
     
     def draw_with_networkx(self):
-        pass
+        import networkx as nx
+        import matplotlib.pyplot as plt
+
+        g = nx.DiGraph()
+        for v in self.network.keys():
+            if v not in g.nodes():
+                g.add_node(v)
+            for u in self.get_neighbors_keys(v):
+                if u not in g.nodes():
+                    g.add_node(u)
+                g.add_edge(v, u)
+        
+        print("输出全部节点：{}".format(g.nodes()))
+        print("输出全部边：{}".format(g.edges()))
+        print("输出全部边的数量：{}".format(g.number_of_edges()))
+        nx.draw_shell(g, with_labels=True)
+        plt.show()
         
         
 def pick_different(s: int, t: int) -> List[int]:

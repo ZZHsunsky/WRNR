@@ -1,3 +1,11 @@
+'''
+Descripttion: 
+version: 
+Author: zehao zhao
+Date: 2020-10-13 08:59:59
+LastEditors: zehao zhao
+LastEditTime: 2020-10-13 09:46:02
+'''
 import sys
 from zutils import *
 from zatim import tim_node_selection
@@ -9,25 +17,38 @@ from zatdc import tdc_with_scc
 from zazmd import zmd_node_select
 import logging
 
+import networkx as nx
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix
-    network_type = 'network'
-    k = 5
-    mc = 10000
+    # network_type = 'network'
+    # k = 5
+    # mc = 10000
 
-    # 加载原生图
-    original_network = ZGraph()
-    original_network.add_edge(1,2, 0.1)
-    original_network.add_edge(2,1, 0.1)
-    original_network.add_edge(1,3, 0.1)
-    original_network.add_edge(3,1, 0.1)
-    original_network.add_edge(2,3, 0.1)
-    original_network.add_edge(3,2, 0.1)
-    original_network.add_edge(1,4, 0.1)
-    original_network.add_edge(4,1, 0.1)
-    original_network.add_edge(2,4, 0.1)
-    original_network.add_edge(4,2, 0.1)
-    original_network.add_edge(3,4, 0.1)
-    original_network.add_edge(4,3, 0.1)
-    zmd_node_select(original_network)
+    # # 加载原生图
+    # original_network = ZGraph()
+    # original_network.add_edge(1,2, 0.1)
+    # original_network.add_edge(2,1, 0.1)
+    # original_network.add_edge(1,3, 0.1)
+    # original_network.add_edge(3,1, 0.1)
+    # original_network.add_edge(2,3, 0.1)
+    # original_network.add_edge(3,2, 0.1)
+    # original_network.add_edge(1,4, 0.1)
+    # original_network.add_edge(4,1, 0.1)
+    # original_network.add_edge(2,4, 0.1)
+    # original_network.add_edge(4,2, 0.1)
+    # original_network.add_edge(3,4, 0.1)
+    # original_network.add_edge(4,3, 0.1)
+    # zmd_node_select(original_network)
+
+    
+    G = nx.Graph()
+    G.add_node(1)
+    G.add_edge(2, 3)
+    # G.add_edge(3, 2)
+    print("输出全部节点：{}".format(G.nodes()))
+    print("输出全部边：{}".format(G.edges()))
+    print("输出全部边的数量：{}".format(G.number_of_edges()))
+    nx.draw(G)
+    plt.show()

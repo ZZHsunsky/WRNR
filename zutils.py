@@ -5,7 +5,7 @@ version:
 Author: sueRimn
 Date: 2020-09-14 18:24:34
 LastEditors: zehao zhao
-LastEditTime: 2020-10-12 17:59:56
+LastEditTime: 2020-10-13 11:34:59
 '''
 
 import time
@@ -109,12 +109,20 @@ def load_network_from_data(g: ZGraph, file_path: str, reverse=False):
     """
     data_lines = open(file_path, 'r').readlines()
 
+    in_cycle = [833, 159, 486, 4582, 6452, 556, 1632, 5486, 5572, 6133, 5486, 5572, 6133, 5486, 5572, 6133, 556, 1392, 834]
+    draw_g = ZGraph()
+        
     for data_line in data_lines[1:]:
         s, e, w = data_line.split()
+        s, e, w = int(s), int(e), float(w)
+
+        if s in in_cycle and e in in_cycle:
+            draw_g.add_edge(s, e, w)
         if reverse:
-            g.add_edge(int(e), int(s), float(w))
+            g.add_edge(s, e, w)
         else:
-            g.add_edge(int(s), int(e), float(w))
+            g.add_edge(s, e, w)
+    
 
 def load_sub_networks(network_type: str) -> List[ZGraph]:
     """
