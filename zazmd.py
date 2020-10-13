@@ -18,7 +18,7 @@ class ZMDTree:
         self.v = v                              # 节点编号
         self.sc = sc                            # 强连通分量编号
         self.in_children = defaultdict(int)     # 记录同一强连通分量的可到达节点
-        self.out_children = defaultdict(list)   # 记录指向别的连通分量的可到达节点，key保存分量编号，val保存节点编号
+        self.out_children = defaultdict(int)   # 记录指向别的连通分量的可到达节点，key保存分量编号，val保存节点编号
         self.father = defaultdict(int)          # 记录自己的父亲
         self.sigma = 1                          # 选择该节点的影响范围的期望
         self.in_sigma = -1                      # 内部连通量的影响范围
@@ -28,7 +28,7 @@ class ZMDTree:
         self.in_children[v] += w                # 可能存在指向孩子的多重边
     
     def add_out_children(self, sc, w):
-        self.out_children[sc].append(w)               # 指向同一个分量可能有好几条边
+        self.out_children[sc] += w               # 指向同一个分量可能有好几条边
     
     def add_father(self, v, w):
         self.father[v] = w                      # 在计算完之后添加父亲，这时边的权重已经确定
@@ -40,7 +40,7 @@ class ZMDTree:
     
     def get_out_children_sigma(self):
         if self.out_sigma == -1:
-            self.out_sigma = sum(map(sum, list(self.out_children.values())))
+            self.out_sigma = sum(list(self.out_children.values()))
         return self.out_sigma
     
     def get_sigma(self, forest: dict):
@@ -50,7 +50,7 @@ class ZMDTree:
         return sigma
 
 @fn_timer
-def zmd_node_select(g: ZGraph):
+def zmd_node_select(k: int, g: ZGraph):
     n = g.max_v + 1
     dfn = [-1 for i in range(n)]
     low = [-1 for i in range(n)]
@@ -109,61 +109,76 @@ def zmd_node_select(g: ZGraph):
     
     logging.info("构建了{}个强连通分量".format(sc))
 
+    tempg = ZGraph()
     visited=dict()
     def in_dfs(root: int, ancestor: ZMDTree, last = -1, decay = 1):
         nonlocal visited
-        if scc[root] != ancestor.sc:
+        if decay < 10 ** (-7):
             return
 
         if last > -1 and root == ancestor.v:
-            print(root)
-            print("+" * 50)
             return
-        
 
-        visited[root] = True
         if last > -1:
             decay = decay * g.network[last][root]
             ancestor.add_in_child(root, decay)
 
+        visited[root] = True
         for v in g.get_neighbors_keys(root):
+            if scc[v] != ancestor.sc:
+                continue
+            
             if visited.get(v, False):
                 continue
+            
             in_dfs(v, ancestor, root, decay)
 
-        print(root)
-        print(visited)
-        visited[root] = False 
 
     # 构造强连通分量内部的连接
     for u in network_candidates:
-        print("="*40)
-        print(u, scc[u])
         ancestor = forest[u]
         visited.clear()
         in_dfs(u, ancestor)
-    
+    logging.info("完成了连通分量内部的构造")
 
-    def out_dfs(root: int, ancestor: ZMDTree, decay=1):
-        pass
+    
+    def out_dfs(root: int, ancestor: ZMDTree, last = -1, decay=1):
+
+        if decay < 10 ** (-7):
+            return
+
+        if last > -1:
+            decay = decay * g.network[last][root]
+            in_sigma = forest[root].get_in_children_sigma()
+            ancestor.add_out_children(root, decay * (1 + in_sigma))
+        
+        if visited.get(root, False):
+            return
+
+        visited[root] = True
+        for v in g.get_neighbors_keys(root):
+            if scc[v] == ancestor.sc:
+                continue
+
+            if scc[root] == scc[v]:
+                continue
+
+            out_dfs(v, ancestor, root, decay)
+            
+
     # 构造强连通分量之间的连接  
     for u in network_candidates:
+        visited.clear()
         ancestor = forest[u]
-        for v in g.get_neighbors_keys(u):
-            if scc[u] == scc[v]:
-                continue
-            w = g.network[u][v] * forest[v].get_in_children_sigma()
-            ancestor.add_out_children(v, w)
+        out_dfs(u, ancestor)
+    logging.info("完成了连通分量外部的构造")
     
-    max_sigma, max_u = -1, -1
+    Q = []
     for u in network_candidates:
         ancestor = forest[u]
         sigma = ancestor.get_sigma(forest)
-        if sigma > max_sigma:
-            max_sigma, max_u = sigma, u
+        Q.append([sigma, u])
     
-    print(max_sigma)
-    print(forest[max_u].in_children)
-    print(forest[max_u].out_children)
-    return [max_u]
+    Q = sorted(Q, key=lambda x: x[0], reverse=True)
+    return [Q[i][1] for i in range(k)]
      

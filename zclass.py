@@ -88,7 +88,8 @@ class ZGraph:
         :param e: end vertex
         :param w: edge weight or proability
         """
-
+        if s == e:
+            return
         self.add_vertex(s)
         self.add_vertex(e)
         if e in self.network[s]:

@@ -23,17 +23,13 @@ sys.setrecursionlimit(200000)
 if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix
     network_type = 'NetHEPTFix'
-    k = 1
+    k = 10
     mc = 1000
 
 
     # 加载原生图
     original_network = ZGraph()
     load_network(original_network, network_type)
-    seed = zmd_node_select(original_network)
-    exit(0)
-
-    calc_sigma_in_random_networks(seed, original_network, mc)
 
     
     # violence
@@ -53,13 +49,13 @@ if __name__ == "__main__":
     reverse_network = ZGraph()
     load_network(reverse_network, network_type, reverse=True)
     ris_seed = tim_node_selection(k, reverse_network, mc * 100)
-    calc_sigma_in_random_networks(ris_seed,  original_network, mc)
+    calc_sigma_in_random_networks(ris_seed, original_network, mc)
 
-    # #tdc
-    # tdc_seed = tdc_node_selection(k, original_network, mc)
-    # time.sleep(1)
-    # calc_sigma_in_random_networks(tdc_seed, original_network, mc)
-    # print("")
+    #tdc
     # tdc_seed = tdc_with_scc(k, original_network, mc)
     # calc_sigma_in_random_networks(tdc_seed, original_network, mc)
-    # print("")
+
+    # # zmd
+    zmd_seed = zmd_node_select(k, original_network)
+    calc_sigma_in_random_networks(zmd_seed, original_network, mc)
+    print("")
