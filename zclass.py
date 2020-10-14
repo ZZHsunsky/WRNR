@@ -4,7 +4,7 @@ version:
 Author: zehao zhao
 Date: 2020-09-16 15:39:03
 LastEditors: zehao zhao
-LastEditTime: 2020-10-13 09:52:31
+LastEditTime: 2020-10-14 11:06:53
 '''
 from typing import List, Dict
 import random
@@ -164,7 +164,7 @@ class ZGraph:
             以边上的概率w返回指定节点的邻居编号
         """
         if vertex in self.network:
-            ret = [x for x in self.network[vertex].keys() if random.random() < self.network[vertex][x]]
+            ret = [x for x in self.network[vertex].keys() if random.random() <= self.network[vertex][x]]
             return ret
         else:
             return []
@@ -217,21 +217,22 @@ class ZGraph:
     def draw_with_networkx(self):
         import networkx as nx
         import matplotlib.pyplot as plt
+        import pygraphviz as pgv
 
-        g = nx.DiGraph()
+        g = pgv.AGraph(directed=True)
+
         for v in self.network.keys():
             if v not in g.nodes():
                 g.add_node(v)
             for u in self.get_neighbors_keys(v):
                 if u not in g.nodes():
                     g.add_node(u)
-                g.add_edge(v, u)
+                g.add_edge(v, u, label=str(self.network[v][u]))
         
-        print("输出全部节点：{}".format(g.nodes()))
-        print("输出全部边：{}".format(g.edges()))
-        print("输出全部边的数量：{}".format(g.number_of_edges()))
-        nx.draw_shell(g, with_labels=True)
-        plt.show()
+        
+        g.write('fooOld.dot')
+        g.layout(prog='dot') # use dot
+        g.draw('b.png', prog="dot")
         
         
 def pick_different(s: int, t: int) -> List[int]:

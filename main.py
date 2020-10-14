@@ -4,7 +4,7 @@ version:
 Author: zehao zhao
 Date: 2020-09-14 18:24:34
 LastEditors: zehao zhao
-LastEditTime: 2020-10-13 11:34:40
+LastEditTime: 2020-10-14 14:45:34
 '''
 import sys
 from zutils import *
@@ -22,8 +22,8 @@ sys.setrecursionlimit(200000)
 
 if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix
-    network_type = 'NetHEPTFix'
-    k = 10
+    network_type = 'network'
+    k = 5
     mc = 1000
 
 
@@ -31,31 +31,26 @@ if __name__ == "__main__":
     original_network = ZGraph()
     load_network(original_network, network_type)
 
-    
-    # violence
-    # seed = violence_in_sub_networks(k, original_network)     #[56, 58, 53]
-    # print(blue_print("[Cache] ") + green_print("VIOLENCE_IN_SUB_NETWORKS ") + orange_print("0.0 ") + "Seconds")
-
 
     # CELF
     celf_seed = celf_in_origin_network(k, original_network, mc=mc)
     calc_sigma_in_random_networks(celf_seed, original_network, mc)
 
-    # max degree
-    max_degree_seed = max_degree_in_origin_network(k, original_network)
-    calc_sigma_in_random_networks(max_degree_seed,  original_network, mc)
+    # # max degree
+    # max_degree_seed = max_degree_in_origin_network(k, original_network)
+    # calc_sigma_in_random_networks(max_degree_seed,  original_network, mc)
 
-    # ris 
-    reverse_network = ZGraph()
-    load_network(reverse_network, network_type, reverse=True)
-    ris_seed = tim_node_selection(k, reverse_network, mc * 100)
-    calc_sigma_in_random_networks(ris_seed, original_network, mc)
+    # # ris 
+    # reverse_network = ZGraph()
+    # load_network(reverse_network, network_type, reverse=True)
+    # ris_seed = tim_node_selection(k, reverse_network, mc * 100)
+    # calc_sigma_in_random_networks(ris_seed, original_network, mc)
 
-    #tdc
+    # tdc
     # tdc_seed = tdc_with_scc(k, original_network, mc)
     # calc_sigma_in_random_networks(tdc_seed, original_network, mc)
 
-    # # zmd
+    # zmd
     zmd_seed = zmd_node_select(k, original_network)
     calc_sigma_in_random_networks(zmd_seed, original_network, mc)
     print("")
