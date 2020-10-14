@@ -21,7 +21,7 @@ def celf_in_origin_network(k: int, g: ZGraph, mc = 100) ->List[int]:
 
     pbar = tqdm(total=100)
     for _, vertex  in enumerate(candidates):
-        if  _ % (len(candidates) // 10) == 0:
+        if  len(candidates) > 10 and _ % (len(candidates) // 10) == 0:
             pbar.update(10)
         sigmas.append(calc_celf_sigma_in_network([vertex], g, mc=mc))
     pbar.close()

@@ -164,7 +164,6 @@ def calc_sigma_in_network(s: List[int], g: ZGraph, with_w=False) -> set:
                     temp.add(neighbor)
         all_actived_set.update(temp)
         actived_set = temp
-    
     return all_actived_set
 
 

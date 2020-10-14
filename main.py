@@ -22,8 +22,8 @@ sys.setrecursionlimit(200000)
 
 if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix
-    network_type = 'network'
-    k = 5
+    network_type = 'test'
+    k = 3
     mc = 1000
 
 
@@ -31,20 +31,20 @@ if __name__ == "__main__":
     original_network = ZGraph()
     load_network(original_network, network_type)
 
-
+    original_network.draw_with_networkx()
     # CELF
     celf_seed = celf_in_origin_network(k, original_network, mc=mc)
     calc_sigma_in_random_networks(celf_seed, original_network, mc)
 
-    # # max degree
+    # # # max degree
     # max_degree_seed = max_degree_in_origin_network(k, original_network)
     # calc_sigma_in_random_networks(max_degree_seed,  original_network, mc)
 
     # # ris 
-    # reverse_network = ZGraph()
-    # load_network(reverse_network, network_type, reverse=True)
-    # ris_seed = tim_node_selection(k, reverse_network, mc * 100)
-    # calc_sigma_in_random_networks(ris_seed, original_network, mc)
+    reverse_network = ZGraph()
+    load_network(reverse_network, network_type, reverse=True)
+    ris_seed = tim_node_selection(k, reverse_network, mc * 100)
+    calc_sigma_in_random_networks(ris_seed, original_network, mc)
 
     # tdc
     # tdc_seed = tdc_with_scc(k, original_network, mc)

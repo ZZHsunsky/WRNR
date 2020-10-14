@@ -4,3 +4,5 @@ Experiment.txt
 Sub-NetPHYFix/
 Sub-network/
 *.json
+*.png
+*.dot
