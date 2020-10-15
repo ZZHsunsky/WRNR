@@ -4,7 +4,7 @@ version:
 Author: zehao zhao
 Date: 2020-09-14 18:24:34
 LastEditors: zehao zhao
-LastEditTime: 2020-10-14 14:45:34
+LastEditTime: 2020-10-15 10:48:20
 '''
 import sys
 from zutils import *
@@ -22,9 +22,9 @@ sys.setrecursionlimit(200000)
 
 if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix
-    network_type = 'test'
-    k = 3
-    mc = 1000
+    network_type = 'network'
+    k = 1
+    mc = 100
 
 
     # 加载原生图
@@ -33,8 +33,8 @@ if __name__ == "__main__":
 
     original_network.draw_with_networkx()
     # CELF
-    celf_seed = celf_in_origin_network(k, original_network, mc=mc)
-    calc_sigma_in_random_networks(celf_seed, original_network, mc)
+    # celf_seed = celf_in_origin_network(k, original_network, mc=mc)
+    # calc_sigma_in_random_networks(celf_seed, original_network, mc)
 
     # # # max degree
     # max_degree_seed = max_degree_in_origin_network(k, original_network)
@@ -42,9 +42,9 @@ if __name__ == "__main__":
 
     # # ris 
     reverse_network = ZGraph()
-    load_network(reverse_network, network_type, reverse=True)
-    ris_seed = tim_node_selection(k, reverse_network, mc * 100)
-    calc_sigma_in_random_networks(ris_seed, original_network, mc)
+    # load_network(reverse_network, network_type, reverse=True)
+    # ris_seed = tim_node_selection(k, reverse_network, mc * 100)
+    # calc_sigma_in_random_networks(ris_seed, original_network, mc)
 
     # tdc
     # tdc_seed = tdc_with_scc(k, original_network, mc)

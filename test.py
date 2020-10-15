@@ -4,7 +4,7 @@ version:
 Author: zehao zhao
 Date: 2020-10-13 08:59:59
 LastEditors: zehao zhao
-LastEditTime: 2020-10-14 14:50:42
+LastEditTime: 2020-10-15 18:10:30
 '''
 import sys
 from zutils import *
@@ -22,10 +22,26 @@ sys.setrecursionlimit(200000)
 
 if __name__ == "__main__":
     
-    g = ZGraph()
-    mc = 1000
-    load_network(g, 'test')
-    g.draw_with_networkx()
+    # Random network NetHEPTFix NetPHYFix
 
-    zmd_seed = zmd_node_select(1, g)
+    k = 1
+    mc = 1000
+
+
+    # 加载原生图
+    g = ZGraph()
+    load_network(g, 'test')
+    # g.draw_with_networkx()
+
+    zmd_seed = zmd_node_select(k, g)
     calc_sigma_in_random_networks(zmd_seed, g, mc)
+
+    # g = ZGraph()
+    # load_network(g, 'network')
+    # zmd_seed = zmd_node_select(k, g)
+    # calc_sigma_in_random_networks(zmd_seed, g, mc)
+
+    # g = ZGraph()
+    # load_network(g, 'NetHEPTFix')
+    # zmd_seed = zmd_node_select(k, g)
+    # calc_sigma_in_random_networks(zmd_seed, g, mc)

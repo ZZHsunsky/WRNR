@@ -5,7 +5,7 @@ version:
 Author: sueRimn
 Date: 2020-09-14 18:24:34
 LastEditors: zehao zhao
-LastEditTime: 2020-10-14 11:14:15
+LastEditTime: 2020-10-15 11:13:31
 '''
 
 import time
@@ -151,6 +151,7 @@ def calc_sigma_in_network(s: List[int], g: ZGraph, with_w=False) -> set:
     """
     actived_set = set(s)
     all_actived_set = actived_set.copy()
+
 
     while actived_set:
         temp = set()

@@ -217,8 +217,6 @@ class ZGraph:
     def draw_with_networkx(self):
         if len(self.network.keys()) > 100:
             return
-        import networkx as nx
-        import matplotlib.pyplot as plt
         import pygraphviz as pgv
 
         g = pgv.AGraph(directed=True)
