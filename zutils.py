@@ -11,39 +11,50 @@ LastEditTime: 2020-10-15 11:13:31
 import time
 import math
 import random
+import numpy as np
 from typing import List, Dict, Set
 from zclass import ZGraph, ZBitGraph, Bitmap, TreeNode
 from zclass import convert_bitmap_to_num_arr, convert_int_to_num_arr
 from collections import Counter
 from functools import wraps
+from collections import deque
 from tqdm import *
 import logging
+
 
 def blue_print(s: str):
     return ("\033[1;34m{}\033[0m".format(s))
 
+
 def orange_print(s: str):
     return ("\033[0;33m{}\033[0m".format(s))
+
 
 def green_print(s: str):
     return ("\033[0;32m{}\033[0m".format(s))
 
+
 def red_print(s: str):
     return ("\033[0;31m{}\033[0m".format(s))
+
 
 def cyan_print(s: str):
     return ("\033[0;36m{}\033[0m".format(s))
 
+
 def fn_timer(function):
     @wraps(function)
     def function_timer(*args, **kwargs):
-        logging.info(  "\n" + "*" * 30 + "\n" + blue_print("[Start] ") + green_print(getattr(function, '__name__').upper()) +"\n" + "*" * 30)
+        logging.info("\n" + "*" * 30 + "\n" + blue_print("[Start] ") + green_print(
+            getattr(function, '__name__').upper()) + "\n" + "*" * 30)
         t0 = time.time()
         result = function(*args, **kwargs)
         t1 = time.time()
-        logging.info(blue_print("[Done] ") + green_print(getattr(function, '__name__').upper()) + orange_print(" " + str(round(t1-t0, 5))) + " Seconds")
+        logging.info(blue_print("[Done] ") + green_print(getattr(
+            function, '__name__').upper()) + orange_print(" " + str(round(t1-t0, 5))) + " Seconds")
         return result
     return function_timer
+
 
 def build_sub_networks(network_type: str, cnt: int):
     """
@@ -60,12 +71,12 @@ def build_sub_networks(network_type: str, cnt: int):
             continue
         os.remove(file_dir + "/" + file)
 
-    logging.info(blue_print("[Start] ") + green_print(network_type + " Dataset ") + "Build Sub Networks!")
+    logging.info(blue_print(
+        "[Start] ") + green_print(network_type + " Dataset ") + "Build Sub Networks!")
     for i in tqdm(range(cnt)):
         g = ZGraph(sub_model=True)
         load_network(g, network_type)
         g.save_to_txt(i, network_type)
-
 
 
 def fix_w_in_network(network_type):
@@ -73,19 +84,22 @@ def fix_w_in_network(network_type):
     file_path = file_dir + network_type + '.txt'
     import os
     if not os.path.exists(file_path):
-        logging.info(red_print("[Error] ") + green_print(network_type + " Dataset ") + "not exists!")
+        logging.info(red_print(
+            "[Error] ") + green_print(network_type + " Dataset ") + "not exists!")
         return None
-    
+
     lines = open(file_path).readlines()
     fix_file_path = file_dir + network_type + 'Fix.txt'
     fix_file = open(fix_file_path, 'w')
     fix_file.write(lines[0])
-    logging.info(blue_print("[Start] ") + green_print(network_type + " Dataset ") + "Fix Action!")
+    logging.info(blue_print(
+        "[Start] ") + green_print(network_type + " Dataset ") + "Fix Action!")
     for line in tqdm(lines[1:]):
         w = round(random.uniform(0, 0.3), 3)
         w = " " + str(w) + "\n"
         fix_file.write(line.strip() + w)
     fix_file.close()
+
 
 def load_network(g: ZGraph, network_type: str, reverse=False):
     """
@@ -93,7 +107,7 @@ def load_network(g: ZGraph, network_type: str, reverse=False):
     """
     if network_type == "Random":
         return
-    
+
     # 数据集文件夹的路径
     file_dir = "./Data/"
     # 数据集的真实路径
@@ -109,7 +123,6 @@ def load_network_from_data(g: ZGraph, file_path: str, reverse=False):
     """
     data_lines = open(file_path, 'r').readlines()
 
-        
     for data_line in data_lines[1:]:
         s, e, w = data_line.split()
         s, e, w = int(s), int(e), float(w)
@@ -118,7 +131,7 @@ def load_network_from_data(g: ZGraph, file_path: str, reverse=False):
             g.add_edge(e, s, w)
         else:
             g.add_edge(s, e, w)
-    
+
 
 def load_sub_networks(network_type: str) -> List[ZGraph]:
     """
@@ -138,9 +151,12 @@ def load_sub_networks(network_type: str) -> List[ZGraph]:
         networks.append(g)
     return networks
 
+
 def calc_celf_sigma_in_network(s: List[int], g: ZGraph, mc=100) -> float:
-    mc_sigma = [len(calc_sigma_in_network(s, g, with_w=True)) for i in range(mc)]
+    mc_sigma = [len(calc_sigma_in_network(s, g, with_w=True))
+                for i in range(mc)]
     return sum(mc_sigma) / mc
+
 
 def calc_sigma_in_network(s: List[int], g: ZGraph, with_w=False) -> set:
     """
@@ -151,7 +167,6 @@ def calc_sigma_in_network(s: List[int], g: ZGraph, with_w=False) -> set:
     """
     actived_set = set(s)
     all_actived_set = actived_set.copy()
-
 
     while actived_set:
         temp = set()
@@ -179,9 +194,10 @@ def calc_sigma_in_sub_networks(s: List[int], networks: List[ZGraph]) -> float:
     for g in networks:
         temp_actived_set = calc_sigma_in_network(s, g)
         sigma += len(temp_actived_set)
-    
+
     sigma = round(sigma / len(networks), 3)
-    logging.info("Sigma is " + cyan_print(str(sigma)) + " with Seed " + cyan_print(str(s)))
+    logging.info("Sigma is " + cyan_print(str(sigma)) +
+                 " with Seed " + cyan_print(str(s)))
     return sigma
 
 
@@ -191,10 +207,76 @@ def calc_sigma_in_random_networks(s: List[int], g: ZGraph, mc=1000) -> float:
     for i in range(mc):
         temp_actived_set = calc_sigma_in_network(s, g, with_w=True)
         sigma += len(temp_actived_set)
-    
+
     sigma = round(sigma / mc, 3)
-    logging.info("Sigma is " + cyan_print(str(sigma)) + " with Seed " + cyan_print(str(s)))
+    logging.info("Sigma is " + cyan_print(str(sigma)) +
+                 " with Seed " + cyan_print(str(s)))
     return sigma
+
+
+def calc_sigma_in_networks_with_cost(s: List[int], g: ZGraph, mc=1000, func=None, budget=math.inf):
+    if func == None:
+        return calc_sigma_in_random_networks(s, g, mc)
+
+    mc = mc * 10
+    sigma = cost = 0
+    for i in range(mc):
+        actived_set, actived_cost = calc_sigma_with_cost(
+            s, g, mc, func, budget)
+        sigma += len(actived_set)
+        cost += actived_cost
+
+    sigma = round(sigma / mc, 3)
+    cost = round(cost / mc, 3)
+    logging.info("Sigma is " + cyan_print(str(sigma)) + ", Cost is " +
+                 red_print(str(cost)) + " with Seed " + cyan_print(str(s)))
+    
+    return sigma, cost
+
+
+def calc_sigma_with_cost(s: List[int], g: ZGraph, mc, func, budget):
+    actived_set = deque(s)
+    all_actived_set = set(s)
+    all_cost = 0
+
+    while actived_set:
+        vertex = actived_set.popleft()
+
+        neighbors = g.get_neighbors_keys_with_w(vertex)
+
+        cnt = 0
+        for neighbor in neighbors:
+            if neighbor in all_actived_set:
+                continue
+            if all_cost + func(cnt + 1) > budget:
+                return all_actived_set, all_cost + func(cnt)
+
+            all_actived_set.add(neighbor)
+            actived_set.append(neighbor)
+            cnt += 1
+
+        all_cost += func(cnt)
+
+    return all_actived_set, all_cost
+
+
+def count_sigma_in_random_networks(s: List[int], g: ZGraph, node, mc=10000) -> dict:
+    c = Counter()
+    for i in range(mc):
+        c.update(calc_sigma_in_network(s, g, with_w=True))
+
+    for k in c.keys():
+        c[k] /= mc
+
+    print(sum(c.values()))
+    for v, w in node.out_children.items():
+        c[v] = abs((1 - w) - c[v])
+    c[node.v] -= 1
+    print(sum(c.values()))
+    import pprint
+    pprint.pprint(c)
+    return c
+
 
 def calc_sigma_in_network_with_bitmap(s: List[int], g: ZGraph, with_w=False) -> List[int]:
     actived_set = set(s)
@@ -210,13 +292,15 @@ def calc_sigma_in_network_with_bitmap(s: List[int], g: ZGraph, with_w=False) -> 
                 sigma.set(v)
         diff = sigma.or_other_bitmap_ret_diff(temp_bitmap)
         actived_set = convert_int_to_num_arr(diff)
-        
-    
+
     return convert_bitmap_to_num_arr(sigma)
 
+
 def calc_sigma_in_sub_networks_with_bitmap(s: List[int], networks: List[ZGraph]) -> float:
-    sigma = sum([len(calc_sigma_in_network_with_bitmap(s, g) for g in networks)])
+    sigma = sum([len(calc_sigma_in_network_with_bitmap(s, g)
+                     for g in networks)])
     return round(sigma / len(networks), 3)
+
 
 if __name__ == "__main__":
     fix_w_in_network('NetHEPT')

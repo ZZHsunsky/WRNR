@@ -4,10 +4,11 @@ version:
 Author: zehao zhao
 Date: 2020-09-16 15:39:03
 LastEditors: zehao zhao
-LastEditTime: 2020-10-14 11:06:53
+LastEditTime: 2020-10-16 16:05:55
 '''
 from typing import List, Dict
 import random
+import numpy as np
 from collections import defaultdict, Counter
 import math
 
@@ -164,7 +165,7 @@ class ZGraph:
             以边上的概率w返回指定节点的邻居编号
         """
         if vertex in self.network:
-            ret = [x for x in self.network[vertex].keys() if random.random() <= self.network[vertex][x]]
+            ret = [x for x in self.network[vertex].keys() if np.random.rand() <= self.network[vertex][x]]
             return ret
         else:
             return []
@@ -230,7 +231,23 @@ class ZGraph:
                 g.add_edge(v, u, label=str(self.network[v][u]))
         
         
-        g.write('fooOld.dot')
+        g.layout(prog='dot') # use dot
+        g.draw('b.png', prog="dot")
+    
+    def draw_ont_node(self, v):
+        if len(self.network.keys()) > 100 or v not in self.network:
+            return
+        import pygraphviz as pgv
+
+        g = pgv.AGraph(directed=True)
+        
+        q = [v]
+        while q:
+            cur = q.pop()
+            for v in self.get_neighbors_keys(cur):
+                w = self.network[cur][v]
+                q.append(v)
+                g.add_edge(cur, v, label=str(round(w, 3)))
         g.layout(prog='dot') # use dot
         g.draw('b.png', prog="dot")
         

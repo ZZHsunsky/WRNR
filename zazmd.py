@@ -4,12 +4,12 @@ version:
 Author: zehao zhao
 Date: 2020-10-12 11:08:11
 LastEditors: zehao zhao
-LastEditTime: 2020-10-15 18:24:13
+LastEditTime: 2020-10-16 20:13:19
 '''
 from zutils import *
 from zclass import ZBitGraph, TreeNode
 import logging
-from collections import defaultdict
+from collections import defaultdict, deque
 from concurrent.futures import ProcessPoolExecutor, as_completed, Future
 from multiprocessing import cpu_count
 
@@ -25,6 +25,7 @@ class ZMDTree:
         self.sigma = 1                          # 选择该节点的影响范围的期望
         self.in_sigma = -1                      # 内部连通量的影响范围
         self.out_sigma = -1                     # 外部影响范围
+        self.decay = 1                          # 考虑到被种子节点影响的衰减
 
     def add_in_child(self, v, w):
         if v not in self.in_children:
@@ -33,46 +34,147 @@ class ZMDTree:
             self.in_children[v] *= (1 - w)
         
     
-    def add_out_children(self, sc, w):
-        if sc not in self.out_children:
+    def add_out_children(self, sc, w, force=False):
+
+        if sc not in self.out_children or force:
             self.out_children[sc] = (1 - w)
         else:
             self.out_children[sc] *= (1 - w)               # 指向同一个分量可能有好几条边
+
         
     
     def add_father(self, v, w):
         self.father[v] = w                      # 在计算完之后添加父亲，这时边的权重已经确定
     
-    def get_in_children_sigma(self):
-        if self.in_sigma == -1:
-            temp = 0
-            for i in list(self.in_children.values()):
-                temp += (1 - i)
-            self.in_sigma = 1 + temp
-        return self.in_sigma
+    def get_in_children_sigma(self, forest: dict, force=False):
+        if self.in_sigma == -1 or force:
+            if self.v in self.in_children:
+                temp = self.in_children[self.v][1]
+            else:
+                temp = 1
+            
+            for v, w in self.in_children.items():
+                if v == self.v:
+                    continue
+                temp += (1 - w[0]) * forest[v].get_out_children_sigma(forest)
+            self.in_sigma = temp
+        return self.decay * self.in_sigma
     
-    def get_out_children_sigma(self, forest: dict):
-        if self.out_sigma == -1:
+    def get_out_children_sigma(self, forest: dict, force=False):
+        if self.out_sigma == -1 or force:
             temp = 0
             for v, w in self.out_children.items():
-                temp += (1 - w) * forest[v].get_in_children_sigma()
+                temp += (1 - w) * forest[v].get_in_children_sigma(forest)
             self.out_sigma = temp
-        return self.out_sigma
+        return self.decay * self.out_sigma
 
-    def get_out_in_sigma(self, forest: dict):
-        sigma = 0
-        for v, w in self.out_children.items():
-            sigma += (1 - w) * (forest[v].get_in_children_sigma() - 1)
-        return sigma
 
-    def get_sigma(self, forest: dict):
-        sigma = self.get_in_children_sigma() + self.get_out_children_sigma(forest)
-        sigma += self.get_out_in_sigma(forest)
+    def get_sigma(self, forest: dict, force=False):
+        sigma = self.get_in_children_sigma(forest, force)
+        sigma += self.get_out_children_sigma(forest, force)
 
         return sigma
+    
+    def remove_child_sigma(self, node):
+        decay = self.out_children[node.v]
+        for v, w in node.out_children.items():
+            self.out_children[v] /= (w * decay)
+    
+    def format_in_children(self):
+        print("[", end="")
+        for v, w in self.in_children.items():
+            print(v, ":", round(w, 4), ",", end="")
+        print("]")
 
+class ActiveEdge:
+    def __init__(self):
+        self.e = {}
+    
+    def add_link(self, v, w):
+        if v not in self.e:
+            self.e[v] = (1 - w)
+        else:
+            self.e[v] *= (1 - w)
+    
+    def remove(self, v):
+        if v in self.e:
+            del self.e[v]
+    
 @fn_timer
-def zmd_node_select(k: int, g: ZGraph):
+def zmd_node_select(k: int, g: ZGraph, rg: ZGraph, retForest=False):
+
+    scc, scc_group = construct_strong_connect_componet(g)  # 构建强连通分量
+
+    forest: Dict[int, ZMDTree] = {}             # 用来保存缩点后的森林
+
+    for u in g.network.keys():
+        forest[u] = ZMDTree(u, scc[u])
+    
+
+    construct_inner(g, forest, scc)
+    # construct_inner_slow(g, forest, scc)
+    construct_out_more(g, forest, scc)
+    # construce_out(g, forest, scc)
+      
+    Q = []
+    for u in g.get_network_candidates():
+        ancestor = forest[u]
+        sigma = ancestor.get_sigma(forest)
+        Q.append([sigma, u, ancestor])
+    
+    if retForest:
+        return Q
+
+    Q = sorted(Q, key=lambda x: x[0], reverse=True)
+
+    debug_node_idx = -1
+
+    for _, item in enumerate(Q):
+        sigma, u, ancestor = item
+        if u != debug_node_idx:
+            continue
+        print(sigma)
+        count_sigma_in_random_networks([u], g, forest[u])
+    
+    Seed = []
+    PredictSigma = 0
+    for i in range(k):
+        sigma, seed = Q[0][0], Q[0][1]
+    
+        for v, w in forest[seed].out_children.items():
+            forest[v].decay = max(0, forest[v].decay - (1 - w))
+            forest[v].get_sigma(forest, True)
+
+        for v,w in forest[seed].father.items():
+            forest[v].remove_child_sigma(forest[seed])
+            forest[v].get_sigma(forest, True)
+
+        for v, w in forest[seed].in_children.items():
+            forest[v].decay = max(0, forest[v].decay - (1 - w[0]))
+        
+        for v in scc_group[forest[seed].sc]:
+            if seed in forest[v].in_children:
+                target = forest[v].in_children[seed]
+                forest[v].in_children[v][1] -= (1 - target[0]) * target[1]
+            forest[v].get_sigma(forest, True)
+        
+        Seed.append(seed)
+        PredictSigma += sigma
+
+        Q = Q[1:]
+        for i in range(len(Q)):
+            Q[i][0] = Q[i][2].get_sigma(forest)
+        Q = sorted(Q, key=lambda x: x[0], reverse=True)
+
+    if debug_node_idx > -1:
+        print(forest[debug_node_idx].get_in_children_sigma(forest))
+        print(forest[debug_node_idx].get_out_children_sigma(forest))
+        draw_one_node_with_out_children(forest[debug_node_idx])
+    
+    print(PredictSigma)
+    return Seed
+
+def construct_strong_connect_componet(g: ZGraph):
     n = g.max_v + 1
     dfn = [-1 for i in range(n)]
     low = [-1 for i in range(n)]
@@ -81,8 +183,7 @@ def zmd_node_select(k: int, g: ZGraph):
 
     sc = 0                                      # 强连通量的个数
     scc = [-1 for i in range(n)]                # 用来保存强连通分量的编号
-
-    forest: Dict[int, ZMDTree] = {}             # 用来保存缩点后的森林
+    scc_group = {}
 
     stack = [-1 for i in range(n)]
     tp = 0 # 表示栈顶
@@ -106,8 +207,10 @@ def zmd_node_select(k: int, g: ZGraph):
                 low[u] = min(low[u], dfn[v])
         
         if dfn[u] == low[u]:
+            scc_group[sc] = [u]
             while stack[tp] != u:
                 scc[stack[tp]] = sc
+                scc_group[sc].append(stack[tp])
                 in_statck[stack[tp]] = False
                 tp -= 1
             
@@ -116,63 +219,179 @@ def zmd_node_select(k: int, g: ZGraph):
             tp -= 1
             sc += 1
 
-    network_candidates = g.get_network_candidates()
     
     for u in g.network.keys():
         if dfn[u] == -1:
             tarjan(u)
-
-    cnt = 0
-    for i in range(len(scc)):
-        if scc[i] == 1627:
-            cnt += 1
-    for u in g.network.keys():
-        forest[u] = ZMDTree(u, scc[u])
     
     logging.debug("构建了{}个强连通分量".format(sc))
 
-    visited=dict()
-    def in_dfs(root: int, ancestor: ZMDTree, last = -1, decay = 1):
-        nonlocal visited
-        if decay < 10 ** (-7):
-            return
+    return scc, scc_group
 
-        if last > -1 and root == ancestor.v:
-            return
+def construct_inner(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
+    
+    visited = dict()
+    
+    def in_dfs(root: int, path: deque, decay=1) -> dict:
+        if root in visited:
+            return visited[root]
+        
+        ret = {root: [0, 1]}
 
-        if last > -1:
-            decay = decay * g.network[last][root]
-            ancestor.add_in_child(root, decay)
-
-        if forest[root].has_visited_in and last > -1:
-            for v, w in forest[root].in_children.items():
-                if v == ancestor.v:
-                    continue
-                ancestor.add_in_child(v, decay * (1 - w))
-            return
-
+        if decay < 10 ** (-4):
+            return ret
+        
+        root_sigma = 1
+        
         for v in g.get_neighbors_keys(root):
-            if scc[v] != ancestor.sc:
-                continue
-            if v == last:
-                continue
-            if visited.get(v, False):
+            if scc[v] != scc[root] or v in path:
                 continue
             
-            in_dfs(v, ancestor, root, decay)
-        
-        forest[root].has_visited_in = True
-        
+            #　w 激活概率
+            w = g.network[root][v]
+            path.append(v)
+            jump_arrive = in_dfs(v, path, w * decay)
 
-    # 构造强连通分量内部的连接
-    for u in network_candidates:
+            # jump_w 没有激活概率
+            for jump_v, jump_w in jump_arrive.items():
+                r_w = 1 - (1 - jump_w[0]) * w
+                if jump_v in ret:
+                    root_sigma -= (1 - ret[jump_v][0])
+                    ret[jump_v][0] *= r_w
+                    root_sigma += (1 - ret[jump_v][0])
+                else:
+                    ret[jump_v] = [r_w, jump_w[1]]
+                    root_sigma += (1 - r_w)
+            path.pop()
+        
+        ret[root][1] = root_sigma
+        visited[root] = ret
+
+        return ret
+    
+    for u in g.get_network_candidates():
         ancestor = forest[u]
         visited.clear()
-        logging.debug("节点{}完成内部连接".format(u))
-        in_dfs(u, ancestor)
+        arrived = in_dfs(u, deque([u]))
+        ancestor.in_children = arrived.copy()
+    
+    logging.debug("完成了连通分量内部的构造")
+    
+
+def construct_inner_slow(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
+    visited=dict()
+    def in_dfs(root: int, path=[], decay = 1) -> ActiveEdge:
+        if root in visited:
+            return visited[root]
+        
+        arrived = ActiveEdge()
+        if decay < 10 ** (-4):
+            return arrived
+        
+        for v in g.get_neighbors_keys(root):
+            if scc[v] != scc[root]:
+                continue
+            
+            w = g.network[root][v]
+            arrived.add_link(v, w)
+            if v in path:
+                continue
+            path.append(v)
+            jump_arrive: ActiveEdge = in_dfs(v, path, w * decay)
+            path.pop()
+            for jump_v, jump_w in jump_arrive.e.items():
+                if jump_v == root:
+                    continue
+                arrived.add_link(jump_v, w * (1 - jump_w))
+        visited[root] = arrived
+        return arrived
+            
+    # 构造强连通分量内部的连接
+    for u in g.get_network_candidates():
+        ancestor = forest[u]
+        visited.clear()
+        arrived = in_dfs(u, [u])
+        arrived.remove(u)
+        ancestor.in_children = arrived.e.copy()
+        # logging.debug("节点{}完成内部连接".format(u))
 
     logging.debug("完成了连通分量内部的构造")
 
+
+def construct_out_more(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
+    
+    count_edges = dict()
+
+    def count_edge(root: int) -> Counter:
+        if root in count_edges:
+            return count_edges[root]
+
+        edges = set()
+
+        for v in g.get_neighbors_keys(root):
+            if scc[v] == scc[root]:
+                continue
+            
+            edges.add((root, v))
+            edges.update(count_edge(v))
+            
+        count_edges[root] = edges
+
+        return count_edges[root]
+    
+    def dfs(root: int) -> Counter:
+        c = Counter()
+        for edge in count_edges[root]:
+            c[edge[1]] += 1
+        
+        if forest[root].has_visited_out:
+            return 
+        
+        for v in g.get_neighbors_keys(root):
+            if scc[v] == scc[root]:
+                continue
+            
+            c[v] -= 1
+
+            decay = g.network[root][v]
+            forest[root].add_out_children(v, decay)
+
+            dfs(v)
+
+            q = [v] if c[v] == 0 else None
+
+            while q:
+                cur = q.pop()
+                decay = 1 - forest[root].out_children[cur]
+            
+                for k, w in g.network[cur].items():
+
+                    if scc[k] == scc[v]:
+                        continue
+                    forest[root].add_out_children(k, decay * w)
+                    c[k] -= 1
+                    if c[k] == 0:
+                        q.append(k)
+        
+        for v, w in forest[root].out_children.items():
+            forest[v].add_father(root, 1-w)
+
+        forest[root].has_visited_out = True
+            
+    # 构造强连通分量之间的连接 
+    for u in g.get_network_candidates():
+        count_edge(u)
+
+    for u in g.get_network_candidates():
+        ancestor = forest[u]
+        if ancestor.has_visited_out:
+            continue
+        dfs(u)
+    
+    logging.debug("完成了连通分量外部的构造")
+
+
+def construce_out(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
     
     def out_dfs(root: int):
 
@@ -184,58 +403,30 @@ def zmd_node_select(k: int, g: ZGraph):
                 continue
             
             out_dfs(v)
+
             decay = g.network[root][v]
-            if decay < (10 ** (-7)):
-                continue
+            # if root == 48:
+            #     print(forest[root].out_children)
+
             forest[root].add_out_children(v, decay)
 
             for u, w in forest[v].out_children.items():
                 forest[root].add_out_children(u, decay * (1 - w))
-        
+
+        for v, w in forest[root].out_children.items():
+            forest[v].add_father(root, 1-w)
+            
         forest[root].has_visited_out = True
             
 
     # 构造强连通分量之间的连接  
-    for u in network_candidates:
+    for u in g.get_network_candidates():
         ancestor = forest[u]
         if ancestor.has_visited_out:
-            logging.debug("连通量{}完跳过了out dfs".format(u))
             continue
         out_dfs(u)
     
     logging.debug("完成了连通分量外部的构造")
-    
-    Q = []
-    for u in g.network.keys():
-        ancestor = forest[u]
-        sigma = ancestor.get_sigma(forest)
-        Q.append([sigma, u])
-    
-    Q = sorted(Q, key=lambda x: x[0], reverse=True)
-
-    for sigma, u in Q:
-        print(forest[u].in_children)
-        print(forest[u].out_children)
-        print("ZMD Predict:", sigma)
-        calc_sigma_in_random_networks([u], g, 10000)
-    best = Q[0][1]
-
-    
-    print("内部Sigma", forest[best].get_in_children_sigma())
-    draw_one_node_with_in_children(forest[best])
-
-    print("外部Sigma", forest[best].get_out_children_sigma(forest))
-    draw_one_node_with_out_children(forest[best])
-
-    print("外-内Sigma", forest[best].get_out_in_sigma(forest))
-
-    print("整体Sigma", forest[best].get_sigma(forest), "连同量编号", forest[best].sc)
-
-    Seed = []
-    for i in range(k):
-        Seed.append(Q[i][1])
-
-    return Seed
 
 def draw_one_node_with_out_children(node: ZMDTree):
     if len(node.out_children.keys()) > 100:
@@ -245,11 +436,14 @@ def draw_one_node_with_out_children(node: ZMDTree):
 
     g = pgv.AGraph(directed=True)
 
-    for v, w in node.out_children.items():
+    out_children = node.out_children.copy()
+    out_children = sorted(out_children.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
+    for v, w in out_children:
         g.add_edge(node.v, v, label=str(round(1-w, 3)))
     
     g.layout(prog='dot') # use dot
     g.draw('out.png', prog="dot")
+
 
 def draw_one_node_with_in_children(node: ZMDTree):
     if len(node.out_children.keys()) > 100:

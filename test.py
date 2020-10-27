@@ -4,10 +4,11 @@ version:
 Author: zehao zhao
 Date: 2020-10-13 08:59:59
 LastEditors: zehao zhao
-LastEditTime: 2020-10-15 18:10:30
+LastEditTime: 2020-10-16 19:06:42
 '''
 import sys
 from zutils import *
+from zcostfunc import * 
 from zatim import tim_node_selection
 from zacelf import celf_in_origin_network
 from zacelf import  max_degree_in_origin_network
@@ -17,8 +18,9 @@ from zatdc import tdc_with_scc
 from zazmd import zmd_node_select
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 sys.setrecursionlimit(200000)
+
 
 if __name__ == "__main__":
     
@@ -30,11 +32,11 @@ if __name__ == "__main__":
 
     # 加载原生图
     g = ZGraph()
-    load_network(g, 'test')
-    # g.draw_with_networkx()
+    load_network(g, 'NetHEPTFix')
 
-    zmd_seed = zmd_node_select(k, g)
-    calc_sigma_in_random_networks(zmd_seed, g, mc)
+    zmd_seed = zmd_node_select(k, g, None)
+    calc_sigma_in_networks_with_cost(zmd_seed, g, mc, linear_increase)
+    # g.draw_with_networkx()
 
     # g = ZGraph()
     # load_network(g, 'network')
