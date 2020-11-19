@@ -16,15 +16,17 @@ from zaviolence import violence_in_sub_networks
 from zatdc import tdc_node_selection
 from zatdc import tdc_with_scc
 from zazmd import zmd_node_select
+from zirie import IRIE
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 sys.setrecursionlimit(200000)
 
 
 if __name__ == "__main__":
     
-    # Random network NetHEPTFix NetPHYFix
+    # Random network NetHEPTFix NetPHYFix EpinionsFix
+
 
     k = 1
     mc = 1000
@@ -32,11 +34,12 @@ if __name__ == "__main__":
 
     # 加载原生图
     g = ZGraph()
-    load_network(g, 'NetHEPTFix')
+    sp_a = load_network(g, 'NetHEPTFix')
 
-    zmd_seed = zmd_node_select(k, g, None)
-    calc_sigma_in_networks_with_cost(zmd_seed, g, mc, linear_increase)
-    # g.draw_with_networkx()
+    # zmd_seed = zmd_node_select(k, g, None)
+    # calc_sigma_in_networks_with_cost(zmd_seed, g, mc, linear_increase)
+    func = fast_slow_increase
+    IRIE(k, g, sp_a, func)
 
     # g = ZGraph()
     # load_network(g, 'network')

@@ -90,17 +90,18 @@ class ZGraph:
         :param w: edge weight or proability
         """
         if s == e:
-            return
+            return False
         self.add_vertex(s)
         self.add_vertex(e)
         if e in self.network[s]:
-            return
+            return False
         
         self.cnt_e += 1
         if not self.sub_model:
             self.network[s][e] = w
         elif random.random() < w:
             self.network[s][e] = w
+        return True
     
     def get_network_candidates(self) -> List[int]:
         """
@@ -159,7 +160,16 @@ class ZGraph:
             return list(self.network[vertex].keys())
         else:
             return []
-    
+
+    def get_neighbors_count(self, vertex: int) -> int:
+        """
+            获取指定节点的邻居概率
+        """
+        if vertex in self.network:
+            return len(self.network[vertex])
+        else:
+            return 0
+
     def get_neighbors_keys_with_w(self, vertex: int) -> List[int]:
         """
             以边上的概率w返回指定节点的邻居编号

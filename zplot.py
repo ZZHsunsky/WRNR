@@ -21,7 +21,7 @@ sys.setrecursionlimit(200000)
 
 if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix
-    network_type = 'NetHEPTFix'
+    network_type = 'NetPHYFix'
     k = 1
     mc = 1000
 

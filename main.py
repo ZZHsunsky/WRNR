@@ -19,11 +19,11 @@ from zazmd import zmd_node_select
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
-sys.setrecursionlimit(200000)
+sys.setrecursionlimit(2000000)
 
 if __name__ == "__main__":
-    # Random network NetHEPTFix NetPHYFix
-    network_type = 'NetHEPTFix'
+    # Random network NetHEPTFix NetPHYFix EpinionsFix
+    network_type = 'network'
     k = 20
     mc = 1000
 
@@ -52,15 +52,12 @@ if __name__ == "__main__":
 
     # ris 
 
-    ris_seed = tim_node_selection(k, reverse_network, mc * 100)
+    ris_seed = tim_node_selection(k, reverse_network, mc * 300)
     if with_cost:
         calc_sigma_in_networks_with_cost(ris_seed, original_network, mc, func)
     else:
         calc_sigma_in_random_networks(ris_seed, original_network, mc)
 
-    # tdc
-    # tdc_seed = tdc_with_scc(k, original_network, mc)
-    # calc_sigma_in_random_networks(tdc_seed, original_network, mc)
 
     # zmd
     zmd_seed = zmd_node_select(k, original_network, reverse_network)

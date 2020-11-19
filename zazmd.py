@@ -25,6 +25,8 @@ class ZMDTree:
         self.sigma = 1                          # 选择该节点的影响范围的期望
         self.in_sigma = -1                      # 内部连通量的影响范围
         self.out_sigma = -1                     # 外部影响范围
+        self.in_sigma_idx = -1
+        self.out_sigma_idx = -1
         self.decay = 1                          # 考虑到被种子节点影响的衰减
 
     def add_in_child(self, v, w):
@@ -46,8 +48,8 @@ class ZMDTree:
     def add_father(self, v, w):
         self.father[v] = w                      # 在计算完之后添加父亲，这时边的权重已经确定
     
-    def get_in_children_sigma(self, forest: dict, force=False):
-        if self.in_sigma == -1 or force:
+    def get_in_children_sigma(self, forest: dict, idx=0):
+        if self.in_sigma == -1 or self.in_sigma_idx < idx:
             if self.v in self.in_children:
                 temp = self.in_children[self.v][1]
             else:
@@ -56,29 +58,33 @@ class ZMDTree:
             for v, w in self.in_children.items():
                 if v == self.v:
                     continue
-                temp += (1 - w[0]) * forest[v].get_out_children_sigma(forest)
+                temp += (1 - w[0]) * forest[v].get_out_children_sigma(forest, idx)
             self.in_sigma = temp
+
+        self.in_sigma_idx = idx
         return self.decay * self.in_sigma
     
-    def get_out_children_sigma(self, forest: dict, force=False):
-        if self.out_sigma == -1 or force:
+    def get_out_children_sigma(self, forest: dict, idx=0):
+        if self.out_sigma == -1 or self.out_sigma_idx < idx:
             temp = 0
             for v, w in self.out_children.items():
-                temp += (1 - w) * forest[v].get_in_children_sigma(forest)
+                temp += (1 - w) * forest[v].get_in_children_sigma(forest, idx)
             self.out_sigma = temp
+
+        self.out_sigma_idx = idx
         return self.decay * self.out_sigma
 
 
-    def get_sigma(self, forest: dict, force=False):
-        sigma = self.get_in_children_sigma(forest, force)
-        sigma += self.get_out_children_sigma(forest, force)
+    def get_sigma(self, forest: dict, idx=0):
+        sigma = self.get_in_children_sigma(forest, idx)
+        sigma += self.get_out_children_sigma(forest, idx)
 
         return sigma
     
     def remove_child_sigma(self, node):
-        decay = self.out_children[node.v]
+        decay = 1- self.out_children[node.v]
         for v, w in node.out_children.items():
-            self.out_children[v] /= (w * decay)
+            self.out_children[v] /= (1 - (1-w) * decay)
     
     def format_in_children(self):
         print("[", end="")
@@ -112,14 +118,12 @@ def zmd_node_select(k: int, g: ZGraph, rg: ZGraph, retForest=False):
     
 
     construct_inner(g, forest, scc)
-    # construct_inner_slow(g, forest, scc)
     construct_out_more(g, forest, scc)
-    # construce_out(g, forest, scc)
       
     Q = []
     for u in g.get_network_candidates():
         ancestor = forest[u]
-        sigma = ancestor.get_sigma(forest)
+        sigma = ancestor.get_sigma(forest, 0)
         Q.append([sigma, u, ancestor])
     
     if retForest:
@@ -134,20 +138,22 @@ def zmd_node_select(k: int, g: ZGraph, rg: ZGraph, retForest=False):
         if u != debug_node_idx:
             continue
         print(sigma)
-        count_sigma_in_random_networks([u], g, forest[u])
+        calc_sigma_in_random_networks([u], g)
+        # count_sigma_in_random_networks([u], g, forest[u])
     
     Seed = []
     PredictSigma = 0
     for i in range(k):
         sigma, seed = Q[0][0], Q[0][1]
-    
+
+        need_update = set()
         for v, w in forest[seed].out_children.items():
             forest[v].decay = max(0, forest[v].decay - (1 - w))
-            forest[v].get_sigma(forest, True)
+            need_update.add(v)
 
         for v,w in forest[seed].father.items():
             forest[v].remove_child_sigma(forest[seed])
-            forest[v].get_sigma(forest, True)
+            need_update.add(v)
 
         for v, w in forest[seed].in_children.items():
             forest[v].decay = max(0, forest[v].decay - (1 - w[0]))
@@ -156,14 +162,19 @@ def zmd_node_select(k: int, g: ZGraph, rg: ZGraph, retForest=False):
             if seed in forest[v].in_children:
                 target = forest[v].in_children[seed]
                 forest[v].in_children[v][1] -= (1 - target[0]) * target[1]
-            forest[v].get_sigma(forest, True)
+            need_update.add(v)
+        
+        for v in g.network.keys():
+            if v not in need_update:
+                forest[v].in_sigma_idx = i + 1
+                forest[v].out_sigma_idx = i + 1
         
         Seed.append(seed)
         PredictSigma += sigma
 
         Q = Q[1:]
-        for i in range(len(Q)):
-            Q[i][0] = Q[i][2].get_sigma(forest)
+        for j in range(len(Q)):
+            Q[j][0] = Q[j][2].get_sigma(forest, i + 1)
         Q = sorted(Q, key=lambda x: x[0], reverse=True)
 
     if debug_node_idx > -1:
@@ -230,27 +241,27 @@ def construct_strong_connect_componet(g: ZGraph):
 
 def construct_inner(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
     
-    visited = dict()
-    
-    def in_dfs(root: int, path: deque, decay=1) -> dict:
-        if root in visited:
-            return visited[root]
+    path_count = defaultdict(int)
+
+    def in_dfs(root: int, decay=1) -> dict:
+        if forest[root].has_visited_in:
+            return forest[root].in_children
         
         ret = {root: [0, 1]}
 
-        if decay < 10 ** (-4):
+        if decay < 10 ** (-8):
             return ret
         
         root_sigma = 1
-        
+
         for v in g.get_neighbors_keys(root):
-            if scc[v] != scc[root] or v in path:
+            if scc[v] != scc[root] or path_count[v] >= 2:
                 continue
             
             #　w 激活概率
             w = g.network[root][v]
-            path.append(v)
-            jump_arrive = in_dfs(v, path, w * decay)
+            path_count[v] += 1
+            jump_arrive = in_dfs(v, w * decay)
 
             # jump_w 没有激活概率
             for jump_v, jump_w in jump_arrive.items():
@@ -262,18 +273,23 @@ def construct_inner(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
                 else:
                     ret[jump_v] = [r_w, jump_w[1]]
                     root_sigma += (1 - r_w)
-            path.pop()
+            path_count[v] -= 1
         
         ret[root][1] = root_sigma
-        visited[root] = ret
+
+        # 后来加的
+        forest[root].in_children = ret
+        forest[root].has_visited_in = True
 
         return ret
     
     for u in g.get_network_candidates():
         ancestor = forest[u]
-        visited.clear()
-        arrived = in_dfs(u, deque([u]))
-        ancestor.in_children = arrived.copy()
+        if ancestor.has_visited_in:
+            continue
+        path_count[u] = 1
+        in_dfs(u)
+        path_count[u] = 0
     
     logging.debug("完成了连通分量内部的构造")
     

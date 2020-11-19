@@ -17,6 +17,7 @@ from zclass import ZGraph, ZBitGraph, Bitmap, TreeNode
 from zclass import convert_bitmap_to_num_arr, convert_int_to_num_arr
 from collections import Counter
 from functools import wraps
+from scipy.sparse import coo_matrix
 from collections import deque
 from tqdm import *
 import logging
@@ -95,7 +96,7 @@ def fix_w_in_network(network_type):
     logging.info(blue_print(
         "[Start] ") + green_print(network_type + " Dataset ") + "Fix Action!")
     for line in tqdm(lines[1:]):
-        w = round(random.uniform(0, 0.3), 3)
+        w = round(random.uniform(0, 0.2), 3)
         w = " " + str(w) + "\n"
         fix_file.write(line.strip() + w)
     fix_file.close()
@@ -112,7 +113,7 @@ def load_network(g: ZGraph, network_type: str, reverse=False):
     file_dir = "./Data/"
     # 数据集的真实路径
     file_path = file_dir + network_type + ".txt"
-    load_network_from_data(g, file_path, reverse)
+    return load_network_from_data(g, file_path, reverse)
 
 
 def load_network_from_data(g: ZGraph, file_path: str, reverse=False):
@@ -123,6 +124,10 @@ def load_network_from_data(g: ZGraph, file_path: str, reverse=False):
     """
     data_lines = open(file_path, 'r').readlines()
 
+    _row = []
+    _col = []
+    _data = []
+
     for data_line in data_lines[1:]:
         s, e, w = data_line.split()
         s, e, w = int(s), int(e), float(w)
@@ -130,8 +135,15 @@ def load_network_from_data(g: ZGraph, file_path: str, reverse=False):
         if reverse:
             g.add_edge(e, s, w)
         else:
-            g.add_edge(s, e, w)
-
+            ret = g.add_edge(s, e, w)
+            if ret:
+                _row.append(s)
+                _col.append(e)
+                _data.append(w)
+    
+    n = g.max_v + 1
+    sp_a = coo_matrix((_data, (_row, _col)), shape=(n, n))
+    return sp_a.tocsr()
 
 def load_sub_networks(network_type: str) -> List[ZGraph]:
     """
@@ -203,7 +215,6 @@ def calc_sigma_in_sub_networks(s: List[int], networks: List[ZGraph]) -> float:
 
 def calc_sigma_in_random_networks(s: List[int], g: ZGraph, mc=1000) -> float:
     sigma = 0
-    mc = mc * 10
     for i in range(mc):
         temp_actived_set = calc_sigma_in_network(s, g, with_w=True)
         sigma += len(temp_actived_set)
@@ -218,7 +229,6 @@ def calc_sigma_in_networks_with_cost(s: List[int], g: ZGraph, mc=1000, func=None
     if func == None:
         return calc_sigma_in_random_networks(s, g, mc)
 
-    mc = mc * 10
     sigma = cost = 0
     for i in range(mc):
         actived_set, actived_cost = calc_sigma_with_cost(
@@ -273,8 +283,8 @@ def count_sigma_in_random_networks(s: List[int], g: ZGraph, node, mc=10000) -> d
         c[v] = abs((1 - w) - c[v])
     c[node.v] -= 1
     print(sum(c.values()))
-    import pprint
-    pprint.pprint(c)
+    # import pprint
+    # pprint.pprint(c)
     return c
 
 
@@ -304,3 +314,4 @@ def calc_sigma_in_sub_networks_with_bitmap(s: List[int], networks: List[ZGraph])
 
 if __name__ == "__main__":
     fix_w_in_network('NetHEPT')
+    fix_w_in_network('NetPHY')
