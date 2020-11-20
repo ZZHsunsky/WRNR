@@ -31,22 +31,19 @@ if __name__ == "__main__":
     k = 1
     mc = 1000
 
+    network_type = "NetHEPTFix"
 
     # 加载原生图
-    g = ZGraph()
-    sp_a = load_network(g, 'NetHEPTFix')
+    original_network = ZGraph()
+    sp_a = load_network(original_network, network_type)
+
 
     # zmd_seed = zmd_node_select(k, g, None)
     # calc_sigma_in_networks_with_cost(zmd_seed, g, mc, linear_increase)
     func = fast_slow_increase
-    IRIE(k, g, sp_a, func)
+    irie_seed = IRIE(k,original_network, sp_a, func)
+    if k > 1:
+        calc_sigma_in_networks_with_cost(irie_seed, original_network, mc, func=func)
 
-    # g = ZGraph()
-    # load_network(g, 'network')
-    # zmd_seed = zmd_node_select(k, g)
-    # calc_sigma_in_random_networks(zmd_seed, g, mc)
 
-    # g = ZGraph()
-    # load_network(g, 'NetHEPTFix')
-    # zmd_seed = zmd_node_select(k, g)
-    # calc_sigma_in_random_networks(zmd_seed, g, mc)
+

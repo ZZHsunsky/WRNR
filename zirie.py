@@ -3,11 +3,94 @@ from matplotlib import pyplot as plt
 import scipy.sparse as sparse
 import torch
 from scipy import stats
+from collections import defaultdict
+import heapq
 
 cost = {}
+ap = {}
 
 @fn_timer
 def IRIE(k: int, g: ZGraph, sp_a: coo_matrix, func):
+    n = g.max_v + 1
+
+    for i in range(n):
+        ap[i] = 0
+
+    s, sigma = compute_influcen_cost(g, [], func)
+    Seed = [s]
+    for i in range(1, k):
+        compute_ap(g, Seed)
+        s, v = compute_influcen_cost(g, [], func)
+        sigma += v
+        Seed.append(s)
+    print(sigma)
+    return Seed
+
+def compute_ap(g: ZGraph, Seed: List[int]):
+    threshold = math.log(320)
+    tempAp = [float('inf') for i in range(g.max_v + 1)]
+
+    q = []
+    for s in Seed:
+        tempAp[s] = 0
+        q.append((0, s))
+    while q:
+        dist, u = heapq.heappop(q)
+
+        if dist > threshold:
+            break
+        
+        if u not in g.network:
+            continue
+
+        for k, w in g.network[u].items():
+            if tempAp[k] > dist + w:
+                tempAp[k] = dist + w
+                heapq.heappush(q, (dist + w, k))
+    
+    for i in range(g.max_v + 1):
+        ap[i] = math.exp(-tempAp[i])
+        ap[i] = min(ap[i], 1)
+
+
+def compute_influcen_cost(g: ZGraph, Seed: Set, func) -> int:
+    n = g.max_v + 1
+
+    dp = [1 - ap[i] for i in range(n)]
+    ndp = [0 for i in range(n)]
+
+    C = []
+    candi = g.get_network_candidates()
+
+    for i in range(n):
+        C.append(calc_active_number_distribute(g.get_neighbors_count(i), func))
+    costdp = C[:]
+    ncostdp = [0 for i in range(n)]
+
+    for i in range(10):
+        for u in candi:
+            ndp[u] = 1
+            ncostdp[u] = 0
+            for k, w in g.network[u].items():
+                ndp[u] += w * dp[k] * 0.7
+                ncostdp[u] += w * costdp[k]
+            ndp[u] *= (1 - ap[u])
+            ncostdp[u] += C[u]
+        
+        for u in candi:
+            dp[u] = ndp[u]
+            costdp[u] = ncostdp[u]
+    
+    degbug = False
+    if degbug:
+        arr = np.array(dp)
+        top_k_idx = arr.argsort()[::-1][:10]
+        draw_simulate_predict(n, g, dp, costdp, func, top_k_idx)
+    
+    return get_max_idx(dp)
+
+
+def irie_with_matrix(k: int, g: ZGraph, sp_a: coo_matrix, func):
     n = g.max_v + 1
 
     C = []
@@ -47,21 +130,50 @@ def calc_active_number_distribute(n, func):
     cost[n] = temp
     return cost[n]
 
-def draw_simulate_predict(n: int, g: ZGraph, X, Y, func):
+def get_max_idx(arr: List):
+    if len(arr) == 0:
+        return -1
+    
+    max_value = arr[0]
+    max_idx = 0
 
-    xlength = min(n, 50)
+    for i in range(1, len(arr)):
+        if arr[i] > max_value:
+            max_idx, max_value = i, arr[i]
+    return max_idx, max_value
+
+def draw_simulate_predict(n: int, g: ZGraph, X, Y, func, x = []):
+
+    if len(x) == 0:
+        xlength = min(n, 400)
+        x = [i for i in range(xlength)]
+    else:
+        x.sort()
+        xlength = len(x)
+    
     simulate = []
     cost_simulate = []
-    for i in range(xlength):
+
+
+    for i in x:
         # simulate.append(calc_sigma_in_random_networks([i], g))
         sigma, reward = calc_sigma_in_networks_with_cost([i], g, func=func)
         simulate.append(sigma)
         cost_simulate.append(reward)
 
-    predict = X.ravel().tolist()[:xlength]
-    cost_predict = Y.ravel().tolist()[:xlength]
-    x = [i for i in range(xlength)]
+    if type(X) != list:
+        X = X.ravel().tolist()
+    if type(Y) != list:
+        Y = Y.ravel().tolist()
 
+    predict = []
+    cost_predict = []
+
+    for i in x:
+        predict.append(X[i])
+        cost_predict.append(Y[i])
+
+    x = [i for i in range(xlength)]
     plt.figure(figsize=(12,8))
     
     # 画期望活跃节点
