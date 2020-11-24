@@ -21,6 +21,7 @@ from scipy.sparse import coo_matrix
 from collections import deque
 from tqdm import *
 import logging
+import csv
 
 
 def blue_print(s: str):
@@ -53,7 +54,7 @@ def fn_timer(function):
         t1 = time.time()
         logging.info(blue_print("[Done] ") + green_print(getattr(
             function, '__name__').upper()) + orange_print(" " + str(round(t1-t0, 5))) + " Seconds")
-        return result
+        return result, t1-t0
     return function_timer
 
 
@@ -96,7 +97,7 @@ def fix_w_in_network(network_type):
     logging.info(blue_print(
         "[Start] ") + green_print(network_type + " Dataset ") + "Fix Action!")
     for line in tqdm(lines[1:]):
-        w = round(random.uniform(0, 0.2), 3)
+        w = round(random.uniform(0, 0.3), 3)
         w = " " + str(w) + "\n"
         fix_file.write(line.strip() + w)
     fix_file.close()
@@ -187,6 +188,7 @@ def calc_sigma_in_network(s: List[int], g: ZGraph, with_w=False) -> set:
                 neighbors = g.get_neighbors_keys_with_w(vertex)
             else:
                 neighbors = g.get_neighbors_keys(vertex)
+            
             for neighbor in neighbors:
                 if neighbor not in all_actived_set:
                     temp.add(neighbor)
@@ -312,6 +314,24 @@ def calc_sigma_in_sub_networks_with_bitmap(s: List[int], networks: List[ZGraph])
     return round(sigma / len(networks), 3)
 
 
+def record_experimnet_result(g: ZGraph, S: List[int], network: str, alg: str, runtime: float):
+    spread = []
+
+    for i in range(1, len(S)):
+        s = calc_sigma_in_random_networks(S[:i+1], g)
+        spread.append(s)
+    
+    with open('./Test/{}.csv'.format(network), 'a+', newline="") as file:
+        writer = csv.writer(file)
+        spread.insert(0, alg)
+        writer.writerow(spread)
+    
+    with open('./Test/runtime.csv', 'a+', newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([alg, runtime])
+    
+
 if __name__ == "__main__":
     fix_w_in_network('NetHEPT')
     fix_w_in_network('NetPHY')
+    fix_w_in_network('Epinions')

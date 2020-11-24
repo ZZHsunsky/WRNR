@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix EpinionsFix
 
 
-    k = 1
+    k = 50
     mc = 1000
 
     network_type = "NetHEPTFix"
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     # zmd_seed = zmd_node_select(k, g, None)
     # calc_sigma_in_networks_with_cost(zmd_seed, g, mc, linear_increase)
-    func = fast_slow_increase
+    func = slow_fast_increase
     irie_seed = IRIE(k,original_network, sp_a, func)
     if k > 1:
         calc_sigma_in_networks_with_cost(irie_seed, original_network, mc, func=func)

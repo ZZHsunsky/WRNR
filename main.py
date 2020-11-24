@@ -25,54 +25,40 @@ sys.setrecursionlimit(2000000)
 
 if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix EpinionsFix
-    network_type = 'NetHEPTFix'
-    k = 10
+    network_type = 'EpinionsFix'
+    k = 50
     mc = 1000
 
 
     # 加载原生图
-    original_network = ZGraph()
-    sp_a = load_network(original_network, network_type)
+    g = ZGraph()
+    sp_a = load_network(g, network_type)
 
-    reverse_network = ZGraph()
-    load_network(reverse_network, network_type, reverse=True)
-
-    original_network.draw_with_networkx()
-    # CELF
-    celf_seed = celf_in_origin_network(k, original_network, mc=mc)
-    calc_sigma_in_random_networks(celf_seed, original_network, mc)
-
+    rg = ZGraph()
+    load_network(rg, network_type, reverse=True)
+    
     func = slow_fast_increase
-    with_cost = False
+
+    # CELF
+    # celf_seed, runtime = celf_in_origin_network(k, g, mc=1000)
+    # record_experimnet_result(g, celf_seed, network_type, 'CELF++', runtime)
 
     # max degree
-    max_degree_seed = max_degree_in_origin_network(k, original_network)
-    if with_cost:
-        calc_sigma_in_networks_with_cost(max_degree_seed,  original_network, mc, func)
-    else:
-        calc_sigma_in_random_networks(max_degree_seed, original_network, mc)
+    max_degree_seed, runtime = max_degree_in_origin_network(k, g)
+    record_experimnet_result(g, max_degree_seed, network_type, 'MaxDegree', runtime)
 
     # ris 
-
-    ris_seed = tim_node_selection(k, reverse_network, mc * 100)
-    if with_cost:
-        calc_sigma_in_networks_with_cost(ris_seed, original_network, mc, func)
-    else:
-        calc_sigma_in_random_networks(ris_seed, original_network, mc)
+    ris_seed, runtime = tim_node_selection(k, rg, mc * 100)
+    record_experimnet_result(g, ris_seed, network_type, 'TIM', runtime)
 
 
     # zmd
-    zmd_seed = zmd_node_select(k, original_network, reverse_network)
-    if with_cost:
-        calc_sigma_in_networks_with_cost(zmd_seed, original_network, mc, func)
-    else:
-        calc_sigma_in_random_networks(zmd_seed, original_network, mc)
+    zmd_seed, runtime = zmd_node_select(k, g)
+    record_experimnet_result(g, zmd_seed, network_type, 'StaticGreedy', runtime)
+
 
     # IRIE
-    irie_seed = IRIE(k, original_network, sp_a, func)
-    if with_cost:
-        calc_sigma_in_networks_with_cost(irie_seed, original_network, mc, func)
-    else:
-        calc_sigma_in_random_networks(irie_seed, original_network, mc)
+    irie_seed, runtime = IRIE(k, g, sp_a, func)
+    record_experimnet_result(g, irie_seed, network_type, 'ICT', runtime)
 
     print("")

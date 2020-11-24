@@ -7,23 +7,24 @@ from collections import defaultdict
 import heapq
 
 cost = {}
-ap = {}
+ap = defaultdict(int)
 
 @fn_timer
 def IRIE(k: int, g: ZGraph, sp_a: coo_matrix, func):
     n = g.max_v + 1
 
-    for i in range(n):
-        ap[i] = 0
 
     s, sigma = compute_influcen_cost(g, [], func)
     Seed = [s]
     for i in range(1, k):
+        for j in range(n):
+            ap[j] = 0
+        
         compute_ap(g, Seed)
         s, v = compute_influcen_cost(g, [], func)
         sigma += v
         Seed.append(s)
-    print(sigma)
+
     return Seed
 
 def compute_ap(g: ZGraph, Seed: List[int]):
@@ -33,7 +34,9 @@ def compute_ap(g: ZGraph, Seed: List[int]):
     q = []
     for s in Seed:
         tempAp[s] = 0
+        ap[s] = 1
         q.append((0, s))
+
     while q:
         dist, u = heapq.heappop(q)
 
@@ -42,15 +45,14 @@ def compute_ap(g: ZGraph, Seed: List[int]):
         
         if u not in g.network:
             continue
-
+        
         for k, w in g.network[u].items():
             if tempAp[k] > dist + w:
                 tempAp[k] = dist + w
                 heapq.heappush(q, (dist + w, k))
-    
-    for i in range(g.max_v + 1):
-        ap[i] = math.exp(-tempAp[i])
-        ap[i] = min(ap[i], 1)
+
+        ap[u] += math.exp(-dist)
+        ap[u] = min(ap[u], 1)
 
 
 def compute_influcen_cost(g: ZGraph, Seed: Set, func) -> int:
@@ -72,7 +74,7 @@ def compute_influcen_cost(g: ZGraph, Seed: Set, func) -> int:
             ndp[u] = 1
             ncostdp[u] = 0
             for k, w in g.network[u].items():
-                ndp[u] += w * dp[k] * 0.7
+                ndp[u] += w * dp[k]
                 ncostdp[u] += w * costdp[k]
             ndp[u] *= (1 - ap[u])
             ncostdp[u] += C[u]
@@ -85,7 +87,7 @@ def compute_influcen_cost(g: ZGraph, Seed: Set, func) -> int:
     if degbug:
         arr = np.array(dp)
         top_k_idx = arr.argsort()[::-1][:10]
-        draw_simulate_predict(n, g, dp, costdp, func, top_k_idx)
+        draw_simulate_predict(n, g, dp, costdp, func, [])
     
     return get_max_idx(dp)
 
@@ -145,7 +147,7 @@ def get_max_idx(arr: List):
 def draw_simulate_predict(n: int, g: ZGraph, X, Y, func, x = []):
 
     if len(x) == 0:
-        xlength = min(n, 400)
+        xlength = min(n, 50)
         x = [i for i in range(xlength)]
     else:
         x.sort()
@@ -186,11 +188,11 @@ def draw_simulate_predict(n: int, g: ZGraph, X, Y, func, x = []):
     ax.yaxis.set_tick_params(which='major', size=10, width=2, direction='in', right='on')
     ax.yaxis.set_tick_params(which='minor', size=7, width=2, direction='in', right='on')
 
-    ax.set_ylabel('Expected Influence', labelpad=10)
+    ax.set_ylabel('Expected Influence', labelpad=10, size=18)
 
     plt.plot(x, simulate, marker='o', label="simulate", color="#3451AC", linewidth=1.5)
     plt.plot(x, predict, marker='*', label="predict", color="#EB222B", linewidth=1.5)
-    plt.legend()
+    plt.legend(fontsize=18)
 
 
     # 画期望代价
@@ -203,12 +205,12 @@ def draw_simulate_predict(n: int, g: ZGraph, X, Y, func, x = []):
     ax.yaxis.set_tick_params(which='major', size=10, width=2, direction='in', right='on')
     ax.yaxis.set_tick_params(which='minor', size=7, width=2, direction='in', right='on')
 
-    ax.set_xlabel('User ID', labelpad=5)
-    ax.set_ylabel('Expected Cost', labelpad=10)
+    ax.set_xlabel('User ID', labelpad=5, size=18)
+    ax.set_ylabel('Expected Cost', labelpad=10, size=18)
 
     plt.plot(x, cost_simulate, marker='o', label="simulate", color="#3451AC", linewidth=1.5)
     plt.plot(x, cost_predict, marker='*', label="predict", color="#EB222B", linewidth=1.5)
-    plt.legend()
+    plt.legend(fontsize=18)
+    plt.savefig('D:\latexProject\CSCWD\DrawMax\sigma-predict.pdf', dpi=300, transparent=False, bbox_inches='tight')
 
-    plt.show()
 

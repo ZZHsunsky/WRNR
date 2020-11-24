@@ -1,14 +1,7 @@
-import sys
-from zutils import *
-from zatim import tim_node_selection
-from zacelf import celf_in_origin_network
-from zacelf import  max_degree_in_origin_network
-from zaviolence import violence_in_sub_networks
-from zatdc import tdc_node_selection
-from zatdc import tdc_with_scc
-from zazmd import zmd_node_select
+
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import pandas as pd
 
 mpl.rcParams['font.family'] = 'serif'
 plt.rcParams['font.size'] = 16
@@ -16,38 +9,20 @@ plt.rcParams['axes.linewidth'] = 1
 
 import logging
 
-logging.basicConfig(level=logging.INFO)
-sys.setrecursionlimit(200000)
+def draw_sigma(network):
 
-if __name__ == "__main__":
-    # Random network NetHEPTFix NetPHYFix
-    network_type = 'NetPHYFix'
-    k = 1
-    mc = 1000
+    csv = pd.read_csv('./Test/{}.csv'.format(network), index_col=0, header=0)
+    algs = csv.index.tolist()
+    # ['CELF++', 'MaxDegree', 'TIM', 'StaticGreedy', 'ICT']
+    draw_config = {
+        'CELF++': ['#1B9D77', 'p'],
+        'MaxDegree': ['#A6CFE3', 's'],
+        'TIM': ['#EF8860', 'v'],
+        'StaticGreedy': ['#A2A2A2', '^'],
+        'ICT': ['#386BB0', 'o']
+    }
 
-    # 加载原生图
-    original_network = ZGraph()
-    load_network(original_network, network_type)
-
-    reverse_network = ZGraph()
-    load_network(reverse_network, network_type, reverse=True)
-
-    Q = zmd_node_select(k, original_network, reverse_network, retForest=True)
-
-    simulate = []
-    predict = []
-    xlength = 50
-    x = []
-
-    for _, item in enumerate(Q):
-        if _ > xlength:
-            break
-        x.append(_+1)
-        sigma, u, ancestor = item
-        predict.append(sigma)
-        simulate.append(calc_sigma_in_random_networks([u], original_network))
-
-    plt.figure(figsize=(9,5))
+    plt.figure(figsize=(10,8))
     plt.grid(linestyle="--")  # 设置背景网格线为虚线
     ax = plt.gca()
     
@@ -56,13 +31,20 @@ if __name__ == "__main__":
     ax.yaxis.set_tick_params(which='major', size=10, width=2, direction='in', right='on')
     ax.yaxis.set_tick_params(which='minor', size=7, width=2, direction='in', right='on')
 
-    ax.set_xlabel('User ID', labelpad=5)
-    ax.set_ylabel('Expected Influence', labelpad=10)
-
-    plt.plot(x, simulate, marker='o', label="simulate", color="#3451AC", linewidth=1.5)
-    plt.plot(x, predict, marker='*', label="predict", color="#EB222B", linewidth=1.5)
-
+    x = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 48]
+    for alg in algs:
+        data = csv.loc[alg]
+        data = [data[i] for i in x]
+        arr = x[:]
+        arr[0] = 1
+        plt.plot(arr, data, label=alg, color=draw_config[alg][0], marker=draw_config[alg][1], linewidth=2.5, markersize=10)
+    
+    ax.set_ylabel('Spread of influence', labelpad=5, size=18)
+    ax.set_xlabel('Number of seeds(k)', labelpad=10, size=18)
     plt.legend()
 
-    plt.savefig('D:\latexProject\CSCWD\DrawMax\sigma-predict.pdf', dpi=300, transparent=False, bbox_inches='tight')
-    plt.show()
+    plt.savefig('D:\latexProject\CSCWD\DrawMax\sigma-{}.pdf'.format(network), dpi=300, transparent=False, bbox_inches='tight')
+
+
+if __name__ == "__main__":
+    draw_sigma('NetPHYFix')

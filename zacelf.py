@@ -9,7 +9,7 @@ LastEditTime: 2020-09-25 10:50:40
 from zutils import *
 
 @fn_timer
-def celf_in_origin_network(k: int, g: ZGraph, mc = 100) ->List[int]:
+def celf_in_origin_network(k: int, g: ZGraph, mc = 1000) ->List[int]:
     """
         使用CELF算法求解，类似于Cache命中来加速
     """
@@ -44,7 +44,6 @@ def celf_in_origin_network(k: int, g: ZGraph, mc = 100) ->List[int]:
 
         Q = Q[1:]
 
-    time.sleep(1)
     return S
 
 @fn_timer

@@ -107,7 +107,7 @@ class ActiveEdge:
             del self.e[v]
     
 @fn_timer
-def zmd_node_select(k: int, g: ZGraph, rg: ZGraph, retForest=False):
+def zmd_node_select(k: int, g: ZGraph, retForest=False):
 
     scc, scc_group = construct_strong_connect_componet(g)  # 构建强连通分量
 
