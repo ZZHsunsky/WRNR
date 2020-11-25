@@ -35,11 +35,19 @@ def draw_sigma(network):
     ax.yaxis.set_tick_params(which='minor', size=7, width=2, direction='in', right='on')
 
     x = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 48]
-    for alg in algs:
-        data = csv.loc[alg]
-        data = [data[i] for i in x]
+    for alg in draw_config.keys():
+        if alg not in algs:
+            continue
+        
+        data = csv.loc[alg].tolist()
         arr = x[:]
-        arr[0] = 1
+
+        if len(data) == 10:
+            arr.pop(0)
+        else:
+            data = [data[i] for i in x]
+            arr[0] = 1
+
         plt.plot(arr, data, label=alg, color=draw_config[alg][0], marker=draw_config[alg][1], linewidth=2.5, markersize=10)
     
     ax.set_ylabel('Spread of influence', labelpad=5, size=18)
@@ -52,14 +60,14 @@ def draw_runtime():
     file = open('./Test/runtime.csv', 'r')
     datasets = ['NetHEPT', 'NetPHY', 'Sina Weibo']
     record = defaultdict(list)
-    bar_width = 4
+    bar_width = 3
 
     draw_config = {
-        'CELF++': ['#1B9D77', 'p'],
-        'MaxDegree': ['#A6CFE3', 's'],
-        'TIM': ['#EF8860', 'v'],
-        'StaticGreedy': ['#A2A2A2', '^'],
-        'ICT': ['#386BB0', 'o']
+        'CELF++': ['#1B9D77', '.'],
+        'MaxDegree': ['#A6CFE3', '/'],
+        'TIM': ['#EF8860', "\\"],
+        'StaticGreedy': ['#A2A2A2', None],
+        'ICT': ['#386BB0', 'x']
     }
 
     for line in file.readlines():
@@ -69,37 +77,67 @@ def draw_runtime():
     
     for alg in record.keys():
         while len(record[alg]) < len(datasets):
-            record[alg].append(0)
+            record[alg].append(10**-9)
     
     x = np.array([i * 15 + i * 10 for i in range(3)])
     idx = 0
-    plt.figure(figsize=(11,7))
+    plt.figure(figsize=(22,14))
     plt.grid(linestyle="--")  # 设置背景网格线为虚线
     ax = plt.gca()
     
-    ax.xaxis.set_tick_params(which='major', size=10, width=2, direction='in', top='on')
-    ax.xaxis.set_tick_params(which='minor', size=7, width=2, direction='in', top='on')
+    # ax.xaxis.set_tick_params(which='major', size=10, width=2, direction='in', top='on')
+    # ax.xaxis.set_tick_params(which='minor', size=7, width=2, direction='in', top='on')
     ax.yaxis.set_tick_params(which='major', size=10, width=2, direction='in', right='on')
     ax.yaxis.set_tick_params(which='minor', size=7, width=2, direction='in', right='on')
 
+    # 显示高度
+    def autolabel(rects, labels):
+        for rect, label in zip(rects, labels):
+            height = rect.get_height()
+            if height == 0:
+                continue
+            plt.text(rect.get_x() - 0.2, 0.1 + height, label, fontsize=13)
+
     for alg in record.keys():
         data = np.array(record[alg])
+        height_label = []
+        for d in data:
+            cnt = 0
+            while d >= 60:
+                d /= 60
+                cnt += 1
+            unit = 's'
+            if cnt == 1:
+                unit = 'm'
+            elif cnt == 2:
+                unit = 'h'
+            
+            if d < 10:
+                label = str(round(d, 2)) + unit
+            else:
+                label = str(round(d, 1)) + unit
+            
+            height_label.append(label)
         data = np.log10(data) + 3
-        plt.bar(x + idx * bar_width, data, bar_width, label=alg, color=draw_config[alg][0])
+        data = np.clip(data, 0, 10)
+        autolabel(plt.bar(x + idx * bar_width, data, bar_width, label=alg, color=draw_config[alg][0], hatch=draw_config[alg][1]), height_label)
         idx += 1
     plt.xticks(x + bar_width * 5 / 2, datasets)
 
     y = np.array([i for i in range(-3, 7, 2)])
 
-    ytick = [r'10^{}'.format(i) for i in y]
+    ytick = [r'$10^{'+ str(i) +'}$' for i in y]
     plt.yticks(y + 3, ytick)
 
     plt.ylabel('Running time(s)', labelpad=5, size=18)
     plt.xlabel('Datasets', labelpad=10, size=18)
 
-    plt.legend()
+    plt.legend(ncol=3, loc=2)
+    # plt.show()
     plt.savefig('D:\latexProject\CSCWD\DrawMax\Runtime.pdf', dpi=300, transparent=False, bbox_inches='tight')
 
 if __name__ == "__main__":
+    # draw_sigma('NetHEPTFix')
     # draw_sigma('NetPHYFix')
+    # draw_sigma('EpinionsFix')
     draw_runtime()

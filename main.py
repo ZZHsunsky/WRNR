@@ -44,21 +44,25 @@ if __name__ == "__main__":
     # record_experimnet_result(g, celf_seed, network_type, 'CELF++', runtime)
 
     # max degree
-    max_degree_seed, runtime = max_degree_in_origin_network(k, g)
-    record_experimnet_result(g, max_degree_seed, network_type, 'MaxDegree', runtime)
+    # max_degree_seed, runtime = max_degree_in_origin_network(k, g)
+    # record_experimnet_result(g, max_degree_seed, network_type, 'MaxDegree', runtime)
 
-    # ris 
+    # # ris 
     ris_seed, runtime = tim_node_selection(k, rg, mc * 100)
     record_experimnet_result(g, ris_seed, network_type, 'TIM', runtime)
 
 
     # zmd
-    zmd_seed, runtime = zmd_node_select(k, g)
-    record_experimnet_result(g, zmd_seed, network_type, 'StaticGreedy', runtime)
+    # zmd_seed, runtime = zmd_node_select(k, g)
+    # record_experimnet_result(g, zmd_seed, network_type, 'StaticGreedy', runtime)
 
 
     # IRIE
-    irie_seed, runtime = IRIE(k, g, sp_a, func)
-    record_experimnet_result(g, irie_seed, network_type, 'ICT', runtime)
+    # irie_seed, runtime = IRIE(k, g, sp_a, func)
+    # record_experimnet_result(g, irie_seed, network_type, 'ICT', runtime)
+    g = ZGraph()
+    load_network(g, 'NetPHYFix')
+    celf_seed, runtime = celf_in_origin_network(k, g, mc=1000)
+    record_experimnet_result(g, celf_seed, network_type, 'CELF++', runtime)
 
     print("")

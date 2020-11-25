@@ -317,7 +317,7 @@ def calc_sigma_in_sub_networks_with_bitmap(s: List[int], networks: List[ZGraph])
 def record_experimnet_result(g: ZGraph, S: List[int], network: str, alg: str, runtime: float):
     spread = []
 
-    for i in range(1, len(S)):
+    for i in range(0, len(S), 5):
         s = calc_sigma_in_random_networks(S[:i+1], g)
         spread.append(s)
     

@@ -289,9 +289,10 @@ def construct_inner(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
             continue
         path_count[u] = 1
         in_dfs(u)
+        print(u)
         path_count[u] = 0
     
-    logging.debug("完成了连通分量内部的构造")
+    logging.info("完成了连通分量内部的构造")
     
 
 def construct_inner_slow(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
@@ -331,7 +332,7 @@ def construct_inner_slow(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
         ancestor.in_children = arrived.e.copy()
         # logging.debug("节点{}完成内部连接".format(u))
 
-    logging.debug("完成了连通分量内部的构造")
+    logging.info("完成了连通分量内部的构造")
 
 
 def construct_out_more(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
@@ -403,8 +404,9 @@ def construct_out_more(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
         if ancestor.has_visited_out:
             continue
         dfs(u)
+        print(u)
     
-    logging.debug("完成了连通分量外部的构造")
+    logging.info("完成了连通分量外部的构造")
 
 
 def construce_out(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
