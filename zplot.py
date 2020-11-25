@@ -96,7 +96,7 @@ def draw_runtime():
             height = rect.get_height()
             if height == 0:
                 continue
-            plt.text(rect.get_x() - 0.2, 0.1 + height, label, fontsize=13)
+            plt.text(rect.get_x() - 0.3, 0.1 + height, label, fontsize=20, zorder=11)
 
     for alg in record.keys():
         data = np.array(record[alg])
@@ -120,19 +120,20 @@ def draw_runtime():
             height_label.append(label)
         data = np.log10(data) + 3
         data = np.clip(data, 0, 10)
-        autolabel(plt.bar(x + idx * bar_width, data, bar_width, label=alg, color=draw_config[alg][0], hatch=draw_config[alg][1]), height_label)
+        autolabel(plt.bar(x + idx * bar_width, data, bar_width, label=alg, color=draw_config[alg][0], hatch=draw_config[alg][1], zorder=10), height_label)
         idx += 1
-    plt.xticks(x + bar_width * 5 / 2, datasets)
 
     y = np.array([i for i in range(-3, 7, 2)])
 
     ytick = [r'$10^{'+ str(i) +'}$' for i in y]
-    plt.yticks(y + 3, ytick)
 
-    plt.ylabel('Running time(s)', labelpad=5, size=18)
-    plt.xlabel('Datasets', labelpad=10, size=18)
+    plt.xticks(x + bar_width * 5 / 2, datasets, size=28)
+    plt.yticks(y + 3, ytick, size=28)
 
-    plt.legend(ncol=3, loc=2)
+    plt.ylabel('Running time(s)', labelpad=5, size=32)
+    plt.xlabel('Datasets', labelpad=10, size=32)
+
+    plt.legend(ncol=3, loc=2, fontsize=28)
     # plt.show()
     plt.savefig('D:\latexProject\CSCWD\DrawMax\Runtime.pdf', dpi=300, transparent=False, bbox_inches='tight')
 
