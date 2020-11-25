@@ -110,14 +110,14 @@ class ActiveEdge:
 def zmd_node_select(k: int, g: ZGraph, retForest=False):
 
     scc, scc_group = construct_strong_connect_componet(g)  # 构建强连通分量
-
     forest: Dict[int, ZMDTree] = {}             # 用来保存缩点后的森林
 
     for u in g.network.keys():
         forest[u] = ZMDTree(u, scc[u])
     
-
+    logging.info("开始构建内部树")
     construct_inner(g, forest, scc)
+    logging.info("开始构建外部树")
     construct_out_more(g, forest, scc)
       
     Q = []
@@ -235,7 +235,7 @@ def construct_strong_connect_componet(g: ZGraph):
         if dfn[u] == -1:
             tarjan(u)
     
-    logging.debug("构建了{}个强连通分量".format(sc))
+    logging.info("构建了{}个强连通分量".format(sc))
 
     return scc, scc_group
 
@@ -249,7 +249,7 @@ def construct_inner(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
         
         ret = {root: [0, 1]}
 
-        if decay < 10 ** (-8):
+        if decay < 10 ** (-5):
             return ret
         
         root_sigma = 1
@@ -289,7 +289,6 @@ def construct_inner(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
             continue
         path_count[u] = 1
         in_dfs(u)
-        print(u)
         path_count[u] = 0
     
     logging.info("完成了连通分量内部的构造")
@@ -404,7 +403,6 @@ def construct_out_more(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
         if ancestor.has_visited_out:
             continue
         dfs(u)
-        print(u)
     
     logging.info("完成了连通分量外部的构造")
 

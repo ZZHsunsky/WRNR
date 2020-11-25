@@ -48,20 +48,19 @@ if __name__ == "__main__":
     # record_experimnet_result(g, max_degree_seed, network_type, 'MaxDegree', runtime)
 
     # # ris 
-    ris_seed, runtime = tim_node_selection(k, rg, mc * 100)
-    record_experimnet_result(g, ris_seed, network_type, 'TIM', runtime)
+    # ris_seed, runtime = tim_node_selection(k, rg, mc * 100)
+    # record_experimnet_result(g, ris_seed, network_type, 'TIM', runtime)
 
 
-    # zmd
+    # # zmd
     # zmd_seed, runtime = zmd_node_select(k, g)
     # record_experimnet_result(g, zmd_seed, network_type, 'StaticGreedy', runtime)
 
 
     # IRIE
-    # irie_seed, runtime = IRIE(k, g, sp_a, func)
-    # record_experimnet_result(g, irie_seed, network_type, 'ICT', runtime)
-    g = ZGraph()
-    load_network(g, 'NetPHYFix')
+    irie_seed, runtime = IRIE(k, g, sp_a, func)
+    record_experimnet_result(g, irie_seed, network_type, 'ICT', runtime)
+
     celf_seed, runtime = celf_in_origin_network(k, g, mc=1000)
     record_experimnet_result(g, celf_seed, network_type, 'CELF++', runtime)
 

@@ -138,7 +138,7 @@ def draw_runtime():
     plt.savefig('D:\latexProject\CSCWD\DrawMax\Runtime.pdf', dpi=300, transparent=False, bbox_inches='tight')
 
 if __name__ == "__main__":
-    # draw_sigma('NetHEPTFix')
-    # draw_sigma('NetPHYFix')
-    # draw_sigma('EpinionsFix')
+    draw_sigma('NetHEPTFix')
+    draw_sigma('NetPHYFix')
+    draw_sigma('EpinionsFix')
     draw_runtime()

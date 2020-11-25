@@ -18,7 +18,7 @@ from zclass import convert_bitmap_to_num_arr, convert_int_to_num_arr
 from collections import Counter
 from functools import wraps
 from scipy.sparse import coo_matrix
-from collections import deque
+from collections import deque, defaultdict
 from tqdm import *
 import logging
 import csv
@@ -96,9 +96,16 @@ def fix_w_in_network(network_type):
     fix_file.write(lines[0])
     logging.info(blue_print(
         "[Start] ") + green_print(network_type + " Dataset ") + "Fix Action!")
+    
+    indegree = defaultdict(int)
+    for line in lines[1:]:
+        s, e = line.split()
+        indegree[e] += 1
+    
     for line in tqdm(lines[1:]):
-        w = round(random.uniform(0, 0.3), 3)
-        w = " " + str(w) + "\n"
+        s, e = line.split()
+        w = 1 / indegree[e]
+        w = " " + str(round(w, 3)) + "\n"
         fix_file.write(line.strip() + w)
     fix_file.close()
 

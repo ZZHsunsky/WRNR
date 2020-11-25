@@ -1,9 +1,7 @@
 from zutils import *
 from matplotlib import pyplot as plt
 import scipy.sparse as sparse
-import torch
 from scipy import stats
-from collections import defaultdict
 import heapq
 
 cost = {}

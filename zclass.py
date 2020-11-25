@@ -260,7 +260,17 @@ class ZGraph:
                 g.add_edge(cur, v, label=str(round(w, 3)))
         g.layout(prog='dot') # use dot
         g.draw('b.png', prog="dot")
-        
+    
+    def summary(self):
+        print("最大节点编号：", self.max_v)
+        candidates = self.get_network_candidates()
+        print("候选节点数量：", len(candidates))
+        edge = 0
+        for u in candidates:
+            edge += len(self.network[u])
+        print("连接关系数量：", edge)
+        print("节点平均出度：", round(edge / self.max_v, 3))
+
         
 def pick_different(s: int, t: int) -> List[int]:
     return pick_one_set_bits(t & ( ~ ( 1 << s )))
