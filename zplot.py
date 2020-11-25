@@ -203,6 +203,7 @@ if __name__ == "__main__":
     # draw_simulate_predict()
     networks = ['NetHEPTFix', 'NetPHYFix', 'EpinionsFix']
 
-    for network in networks:
-        # draw_sigma(network)
-        draw_cost(network)
+    # for network in networks:
+    #     draw_sigma(network)
+    #     draw_cost(network)
+    draw_cost('NetPHYFix')

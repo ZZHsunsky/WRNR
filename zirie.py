@@ -81,6 +81,11 @@ def compute_influcen_cost(g: ZGraph, Seed: Set, func, debug=False) -> int:
             dp[u] = ndp[u]
             costdp[u] = ncostdp[u]
     
+    ret = [0 for i in range(n)]
+    for u in candi:
+        if costdp[u] > 0:
+            ret[u] = dp[u] / costdp[u]
+
     if debug:
         arr = np.array(dp)
         top_k_idx = arr.argsort()[::-1][:10]

@@ -65,9 +65,11 @@ def run_sigma_time():
 
 def run_cost_func():
     # NetHEPTFix NetPHYFix EpinionsFix
-    network_type = 'NetHEPTFix'
+    network_type = 'EpinionsFix'
     budgets_config = {
-        'NetHEPTFix': [10, 20, 30, 40, 50, 60, 70, 80]
+        'NetHEPTFix': [10, 20, 30, 40, 50, 60, 70, 80],
+        'NetPHYFix': [20, 40, 60, 80, 100, 120, 140, 160],
+        'EpinionsFix': [3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
     }
     k = 100
     mc = 1000
@@ -83,8 +85,7 @@ def run_cost_func():
     func = sigmod_func
     budgets = budgets_config[network_type]
 
-    celf_seed, runtime = celf_in_origin_network(k, g, mc=1000)
-    record_experiment_cost(g, celf_seed, network_type, 'CELF++', budgets, func)
+
 
     max_degree_seed, runtime = max_degree_in_origin_network(k, g)
     record_experiment_cost(g, max_degree_seed, network_type, 'MaxDegree', budgets, func)
@@ -92,13 +93,15 @@ def run_cost_func():
     ris_seed, runtime = tim_node_selection(k, rg, mc * 100)
     record_experiment_cost(g, ris_seed, network_type, 'TIM', budgets, func)
 
-    zmd_seed, runtime = zmd_node_select(k, g)
-    record_experiment_cost(g, zmd_seed, network_type, 'StaticGreedy', budgets, func)
-
-
+    
     irie_seed, runtime = IRIE(k, g, sp_a, func)
     record_experiment_cost(g, irie_seed, network_type, 'ICT', budgets, func)
 
+    zmd_seed, runtime = zmd_node_select(k, g)
+    record_experiment_cost(g, zmd_seed, network_type, 'StaticGreedy', budgets, func)
+
+    celf_seed, runtime = celf_in_origin_network(k, g, mc=1000)
+    record_experiment_cost(g, celf_seed, network_type, 'CELF++', budgets, func)
 
 
 if __name__ == "__main__":
