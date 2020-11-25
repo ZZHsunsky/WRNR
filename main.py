@@ -20,6 +20,7 @@ from zirie import IRIE
 
 import logging
 
+
 logging.basicConfig(level=logging.INFO)
 sys.setrecursionlimit(2000000)
 
@@ -66,11 +67,7 @@ def run_sigma_time():
 def run_cost_func():
     # NetHEPTFix NetPHYFix EpinionsFix
     network_type = 'EpinionsFix'
-    budgets_config = {
-        'NetHEPTFix': [10, 20, 30, 40, 50, 60, 70, 80],
-        'NetPHYFix': [20, 40, 60, 80, 100, 120, 140, 160],
-        'EpinionsFix': [3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
-    }
+
     k = 100
     mc = 1000
 

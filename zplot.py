@@ -27,7 +27,7 @@ def draw_sigma(network):
         'ICT': ['#386BB0', 'o']
     }
 
-    plt.figure(figsize=(10,8))
+    plt.figure(figsize=(10,7))
     plt.grid(linestyle="--")  # 设置背景网格线为虚线
     ax = plt.gca()
     
@@ -52,9 +52,12 @@ def draw_sigma(network):
 
         plt.plot(arr, data, label=alg, color=draw_config[alg][0], marker=draw_config[alg][1], linewidth=2.5, markersize=10)
     
-    ax.set_ylabel('Spread of influence', labelpad=5, size=18)
-    ax.set_xlabel('Number of seeds(k)', labelpad=10, size=18)
-    plt.legend()
+    plt.yticks(size=18)
+    plt.xticks(size=18)
+
+    ax.set_ylabel('Spread of influence', labelpad=5, size=20)
+    ax.set_xlabel('Number of seeds(k)', labelpad=10, size=20)
+    plt.legend(fontsize=18)
 
     plt.savefig('D:\latexProject\CSCWD\DrawMax\sigma-{}.pdf'.format(network), dpi=300, transparent=False, bbox_inches='tight')
 
@@ -65,11 +68,11 @@ def draw_runtime():
     bar_width = 3
 
     draw_config = {
-        'CELF++': ['#1B9D77', '.'],
-        'MaxDegree': ['#A6CFE3', '/'],
-        'TIM': ['#EF8860', "\\"],
-        'StaticGreedy': ['#A2A2A2', None],
-        'ICT': ['#386BB0', 'x']
+        'MaxDegree': ['#9ABBF3', '/'],
+        'StaticGreedy': ['#FFFFA2', 'x'],
+        'CELF++': ['#C2B2D6', '-'],
+        'TIM': ['#9BD59B', "\\"],
+        'ICT': ['#FDC897', None]
     }
 
     for line in file.readlines():
@@ -113,8 +116,9 @@ def draw_runtime():
                 unit = 'm'
             elif cnt == 2:
                 unit = 'h'
-            
-            if d < 10:
+            if d < 0.01:
+                label = str(round(d, 3)) + unit
+            elif d < 10:
                 label = str(round(d, 2)) + unit
             else:
                 label = str(round(d, 1)) + unit
@@ -122,7 +126,7 @@ def draw_runtime():
             height_label.append(label)
         data = np.log10(data) + 3
         data = np.clip(data, 0, 10)
-        autolabel(plt.bar(x + idx * bar_width, data, bar_width, label=alg, color=draw_config[alg][0], hatch=draw_config[alg][1], zorder=10), height_label)
+        autolabel(plt.bar(x + idx * bar_width, data, bar_width, label=alg, color=draw_config[alg][0], hatch=draw_config[alg][1],edgecolor='#000000', zorder=10), height_label)
         idx += 1
 
     y = np.array([i for i in range(-3, 7, 2)])
@@ -135,7 +139,8 @@ def draw_runtime():
     plt.ylabel('Running time(s)', labelpad=5, size=32)
     plt.xlabel('Datasets', labelpad=10, size=32)
 
-    plt.legend(ncol=2, loc=2, fontsize=28, shadow=False, fancybox=False)
+    # plt.legend(ncol=2, loc=2, fontsize=28, shadow=False, fancybox=False)
+    plt.legend(fontsize=28)
     # plt.show()
     plt.savefig('D:\latexProject\CSCWD\DrawMax\Runtime.pdf', dpi=300, transparent=False, bbox_inches='tight')
 
@@ -156,10 +161,15 @@ def draw_simulate_predict():
 
 def draw_cost(network):
     import os
-    if not os.path.exists('./Test/Cost-{}.csv'.format(network)):
-        print(network, "COST 记录不存在")
+    name = network
+
+    if name == 'EpinionsFix':
+        name = "NetPHYFix"
+
+    if not os.path.exists('./Test/Cost-{}.csv'.format(name)):
+        print(name, "COST 记录不存在")
         return
-    file = open('./Test/Cost-{}.csv'.format(network), 'r')
+    file = open('./Test/Cost-{}.csv'.format(name), 'r')
     record = {}
 
     xlenth = 0
@@ -171,17 +181,17 @@ def draw_cost(network):
         record[alg] = sigmas
 
     bar_width = 3
-    x = np.array([i * bar_width * 5 + i * 10  for i in range(xlenth)])
+    x = np.array([i * bar_width * 6  for i in range(xlenth)])
 
     draw_config = {
-        'MaxDegree': ['#A6CFE3', '/'],
-        'StaticGreedy': ['#A2A2A2', None],
-        'CELF++': ['#1B9D77', '.'],
-        'TIM': ['#EF8860', "\\"],
-        'ICT': ['#386BB0', 'x']
+        'MaxDegree': ['#9ABBF3', '/'],
+        'StaticGreedy': ['#FFFFA2', 'x'],
+        'CELF++': ['#C2B2D6', '.'],
+        'TIM': ['#9BD59B', "\\"],
+        'ICT': ['#FDC897', None]
     }
 
-    plt.figure(figsize=(22,10))
+    plt.figure(figsize=(22,14))
     plt.grid(linestyle="--")  # 设置背景网格线为虚线
     ax = plt.gca()
     
@@ -192,18 +202,24 @@ def draw_cost(network):
     for alg in draw_config.keys():
         if alg not in record:
             continue
-        plt.bar(x + idx * bar_width, record[alg], bar_width, label=alg, zorder=10, color=draw_config[alg][0], hatch=draw_config[alg][1])
+        plt.bar(x + idx * bar_width, record[alg], bar_width, label=alg, zorder=10, color=draw_config[alg][0], hatch=draw_config[alg][1], edgecolor='#000000')
         idx += 1
-    plt.legend()
-    plt.show()
+
+    plt.yticks(size=40)
+    plt.xticks(x + bar_width * 5 / 2.5, budgets_config[network], size=40)
+
+    ax.set_ylabel('Spread of influence', labelpad=5, size=48)
+    ax.set_xlabel('Budget', labelpad=10, size=48) 
+    plt.legend(fontsize=40)
+    plt.savefig('D:\latexProject\CSCWD\DrawMax\Cost-{}.pdf'.format(network), dpi=300, transparent=False, bbox_inches='tight')
+
 
 if __name__ == "__main__":
    
-    # draw_runtime()
+    draw_runtime()
     # draw_simulate_predict()
     networks = ['NetHEPTFix', 'NetPHYFix', 'EpinionsFix']
 
-    # for network in networks:
-    #     draw_sigma(network)
-    #     draw_cost(network)
-    draw_cost('NetPHYFix')
+    for network in networks:
+        draw_sigma(network)
+        draw_cost(network)

@@ -23,6 +23,11 @@ from tqdm import *
 import logging
 import csv
 
+budgets_config = {
+    'NetHEPTFix': [10, 20, 30, 40, 50, 60, 70, 80],
+    'NetPHYFix': [20, 40, 60, 80, 100, 120, 140, 160],
+    'EpinionsFix': [3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
+}
 
 def blue_print(s: str):
     return ("\033[1;34m{}\033[0m".format(s))
