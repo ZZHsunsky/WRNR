@@ -8,11 +8,11 @@ cost = {}
 ap = defaultdict(int)
 
 @fn_timer
-def IRIE(k: int, g: ZGraph, sp_a: coo_matrix, func):
+def IRIE(k: int, g: ZGraph, sp_a: coo_matrix, func, debug=False):
     n = g.max_v + 1
 
 
-    s, sigma = compute_influcen_cost(g, [], func)
+    s, sigma = compute_influcen_cost(g, [], func, debug)
     Seed = [s]
     for i in range(1, k):
         for j in range(n):
@@ -53,7 +53,7 @@ def compute_ap(g: ZGraph, Seed: List[int]):
         ap[u] = min(ap[u], 1)
 
 
-def compute_influcen_cost(g: ZGraph, Seed: Set, func) -> int:
+def compute_influcen_cost(g: ZGraph, Seed: Set, func, debug=False) -> int:
     n = g.max_v + 1
 
     dp = [1 - ap[i] for i in range(n)]
@@ -81,8 +81,7 @@ def compute_influcen_cost(g: ZGraph, Seed: Set, func) -> int:
             dp[u] = ndp[u]
             costdp[u] = ncostdp[u]
     
-    degbug = False
-    if degbug:
+    if debug:
         arr = np.array(dp)
         top_k_idx = arr.argsort()[::-1][:10]
         draw_simulate_predict(n, g, dp, costdp, func, [])

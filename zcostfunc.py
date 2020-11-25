@@ -8,3 +8,6 @@ def fast_slow_increase(x):
 
 def slow_fast_increase(x):
     return x**2
+
+def sigmod_func(x):
+    return 1000 / (1 + math.e ** (10 - x / 3))

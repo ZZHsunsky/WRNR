@@ -28,24 +28,27 @@ if __name__ == "__main__":
     # Random network NetHEPTFix NetPHYFix EpinionsFix
 
 
-    k = 1
+    k = 10
     mc = 1000
 
-    network_type = "EpinionsFix"
+    network_type = "network"
 
     # 加载原生图
 
     g = ZGraph()
     sp_a = load_network(g, network_type)
     g.summary()
-
-
+    func = sigmod_func
     
-    for s in g.get_network_candidates():
-        seed = [s]
-        print(seed)
-        active_set = calc_sigma_in_network(seed, g, with_w=True)
-        print(len(active_set))
+    ris_seed, runtime = tim_node_selection(k, g, mc * 100)
+    calc_sigma_in_random_networks(ris_seed, g)
+
+    max_degree_seed, runtime = max_degree_in_origin_network(k, g)
+    calc_sigma_in_random_networks(max_degree_seed, g)
+
+    # calc_sigma_in_networks_with_cost(ris_seed, g, mc, func=func)
+
+    # zmd_seed, runtime = IRIE(k, g, sp_a, func)
 
     # func = slow_fast_increase
     # irie_seed, runtime = IRIE(k,g, sp_a, func)

@@ -336,7 +336,18 @@ def record_experimnet_result(g: ZGraph, S: List[int], network: str, alg: str, ru
     with open('./Test/runtime.csv', 'a+', newline="") as file:
         writer = csv.writer(file)
         writer.writerow([alg, runtime])
+
+def record_experiment_cost(g: ZGraph, S: List[int], network: str, alg: str, budgets: List[int], func):
+
+    spread = []
+    for budget in budgets:
+        s, c = calc_sigma_in_networks_with_cost(S, g, mc=1000, func=func, budget=budget)
+        spread.append(s)
     
+    with open('./Test/Cost-{}.csv'.format(network), 'a', newline="") as file:
+        writer = csv.writer(file)
+        spread.insert(0, alg)
+        writer.writerow(spread)
 
 if __name__ == "__main__":
     fix_w_in_network('NetHEPT')

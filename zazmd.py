@@ -84,7 +84,10 @@ class ZMDTree:
     def remove_child_sigma(self, node):
         decay = 1- self.out_children[node.v]
         for v, w in node.out_children.items():
-            self.out_children[v] /= (1 - (1-w) * decay)
+            if (1-w)*decay == 1:
+                self.out_children[v] = 1
+            else:
+                self.out_children[v] /= (1 - (1-w) * decay)
     
     def format_in_children(self):
         print("[", end="")
@@ -249,7 +252,7 @@ def construct_inner(g: ZGraph, forest: Dict[int, ZMDTree], scc: List[int]):
         
         ret = {root: [0, 1]}
 
-        if decay < 10 ** (-5):
+        if decay < 10 ** (-3):
             return ret
         
         root_sigma = 1

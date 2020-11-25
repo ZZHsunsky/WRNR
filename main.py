@@ -23,7 +23,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 sys.setrecursionlimit(2000000)
 
-if __name__ == "__main__":
+def run_sigma_time():
     # Random network NetHEPTFix NetPHYFix EpinionsFix
     network_type = 'EpinionsFix'
     k = 50
@@ -53,15 +53,53 @@ if __name__ == "__main__":
 
 
     # # zmd
-    # zmd_seed, runtime = zmd_node_select(k, g)
-    # record_experimnet_result(g, zmd_seed, network_type, 'StaticGreedy', runtime)
+    zmd_seed, runtime = zmd_node_select(k, g)
+    record_experimnet_result(g, zmd_seed, network_type, 'StaticGreedy', runtime)
 
 
     # IRIE
-    irie_seed, runtime = IRIE(k, g, sp_a, func)
-    record_experimnet_result(g, irie_seed, network_type, 'ICT', runtime)
-
-    celf_seed, runtime = celf_in_origin_network(k, g, mc=1000)
-    record_experimnet_result(g, celf_seed, network_type, 'CELF++', runtime)
+    # irie_seed, runtime = IRIE(k, g, sp_a, func)
+    # record_experimnet_result(g, irie_seed, network_type, 'ICT', runtime)
 
     print("")
+
+def run_cost_func():
+    # NetHEPTFix NetPHYFix EpinionsFix
+    network_type = 'NetHEPTFix'
+    budgets_config = {
+        'NetHEPTFix': [10, 20, 30, 40, 50, 60, 70, 80]
+    }
+    k = 100
+    mc = 1000
+
+
+    # 加载原生图
+    g = ZGraph()
+    sp_a = load_network(g, network_type)
+    rg = ZGraph()
+    load_network(rg, network_type, reverse=True)
+
+    # 配置
+    func = sigmod_func
+    budgets = budgets_config[network_type]
+
+    celf_seed, runtime = celf_in_origin_network(k, g, mc=1000)
+    record_experiment_cost(g, celf_seed, network_type, 'CELF++', budgets, func)
+
+    max_degree_seed, runtime = max_degree_in_origin_network(k, g)
+    record_experiment_cost(g, max_degree_seed, network_type, 'MaxDegree', budgets, func)
+
+    ris_seed, runtime = tim_node_selection(k, rg, mc * 100)
+    record_experiment_cost(g, ris_seed, network_type, 'TIM', budgets, func)
+
+    zmd_seed, runtime = zmd_node_select(k, g)
+    record_experiment_cost(g, zmd_seed, network_type, 'StaticGreedy', budgets, func)
+
+
+    irie_seed, runtime = IRIE(k, g, sp_a, func)
+    record_experiment_cost(g, irie_seed, network_type, 'ICT', budgets, func)
+
+
+
+if __name__ == "__main__":
+    run_cost_func()

@@ -4,7 +4,9 @@ import matplotlib as mpl
 import pandas as pd
 from collections import defaultdict
 import numpy as np
-
+from zutils import *
+from zcostfunc import *
+from zirie import IRIE
 
 mpl.rcParams['font.family'] = 'serif'
 plt.rcParams['font.size'] = 16
@@ -133,12 +135,74 @@ def draw_runtime():
     plt.ylabel('Running time(s)', labelpad=5, size=32)
     plt.xlabel('Datasets', labelpad=10, size=32)
 
-    plt.legend(ncol=3, loc=2, fontsize=28)
+    plt.legend(ncol=2, loc=2, fontsize=28, shadow=False, fancybox=False)
     # plt.show()
     plt.savefig('D:\latexProject\CSCWD\DrawMax\Runtime.pdf', dpi=300, transparent=False, bbox_inches='tight')
 
+def draw_simulate_predict():
+    k = 1
+    mc = 1000
+
+    network_type = "NetHEPTFix"
+
+    # 加载原生图
+
+    g = ZGraph()
+    sp_a = load_network(g, network_type)
+
+    func = sigmod_func
+    IRIE(k, g, sp_a, func, True)
+
+
+def draw_cost(network):
+    import os
+    if not os.path.exists('./Test/Cost-{}.csv'.format(network)):
+        print(network, "COST 记录不存在")
+        return
+    file = open('./Test/Cost-{}.csv'.format(network), 'r')
+    record = {}
+
+    xlenth = 0
+    for line in file.readlines():
+        arr = line.split(',')
+        alg = arr.pop(0)
+        sigmas = list(map(lambda x: float(x), arr))
+        xlenth = len(sigmas)
+        record[alg] = sigmas
+
+    bar_width = 3
+    x = np.array([i * bar_width * 5 + i * 10  for i in range(xlenth)])
+
+    draw_config = {
+        'MaxDegree': ['#A6CFE3', '/'],
+        'StaticGreedy': ['#A2A2A2', None],
+        'CELF++': ['#1B9D77', '.'],
+        'TIM': ['#EF8860', "\\"],
+        'ICT': ['#386BB0', 'x']
+    }
+
+    plt.figure(figsize=(22,10))
+    plt.grid(linestyle="--")  # 设置背景网格线为虚线
+    ax = plt.gca()
+    
+    ax.yaxis.set_tick_params(which='major', size=10, width=2, direction='in', right='on')
+    ax.yaxis.set_tick_params(which='minor', size=7, width=2, direction='in', right='on')
+
+    idx = 0
+    for alg in draw_config.keys():
+        if alg not in record:
+            continue
+        plt.bar(x + idx * bar_width, record[alg], bar_width, label=alg, zorder=10, color=draw_config[alg][0], hatch=draw_config[alg][1])
+        idx += 1
+    plt.legend()
+    plt.show()
+
 if __name__ == "__main__":
-    draw_sigma('NetHEPTFix')
-    draw_sigma('NetPHYFix')
-    draw_sigma('EpinionsFix')
-    draw_runtime()
+   
+    # draw_runtime()
+    # draw_simulate_predict()
+    networks = ['NetHEPTFix', 'NetPHYFix', 'EpinionsFix']
+
+    for network in networks:
+        # draw_sigma(network)
+        draw_cost(network)
